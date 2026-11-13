@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Буровой журнал</title>
+<meta name="description" content="Журнал параметров бурового раствора, ёмкости, расчёты и склад — работает без интернета">
+<meta name="theme-color" content="#0A5246">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Бур. журнал">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{
+  --onacc:#FFFFFF; --bg:#EEF2F1; --card:#FFFFFF; --ink:#14201E; --mute:#5E6B69; --line:#D6DEDC; --soft:#F4F7F6;
+  --acc:#0E6B5C; --acc2:#0A5246; --accsoft:#DDF0EB; --warn:#B45309; --warnsoft:#FDF0DC; --bad:#B42318; --badsoft:#FBE3E0;
+  --ok:#0B7A4B; --oksoft:#DDF3E8; --info:#1D4ED8; --infosoft:#E3ECFD; --shadow:0 1px 2px rgba(16,24,22,.06),0 2px 8px rgba(16,24,22,.05);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1513; --card:#17201E; --ink:#E7EEEC; --mute:#97A6A3; --line:#2A3633; --soft:#1D2826;
+  --acc:#3FB59E; --acc2:#62C9B4; --accsoft:#173A33; --warn:#F2A54A; --warnsoft:#3A2A14; --bad:#F2766A; --badsoft:#3D1E1B;
+  --ok:#4FCB8E; --oksoft:#173527; --info:#7EA7F8; --infosoft:#1B2A47; --shadow:none; --onacc:#05231D; } }
+:root[data-theme="dark"]{
+  --bg:#0E1513; --card:#17201E; --ink:#E7EEEC; --mute:#97A6A3; --line:#2A3633; --soft:#1D2826;
+  --acc:#3FB59E; --acc2:#62C9B4; --accsoft:#173A33; --warn:#F2A54A; --warnsoft:#3A2A14; --bad:#F2766A; --badsoft:#3D1E1B;
+  --ok:#4FCB8E; --oksoft:#173527; --info:#7EA7F8; --infosoft:#1B2A47; --shadow:none; --onacc:#05231D; }
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; background:var(--bg); color:var(--ink); }
+body{ font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Inter",sans-serif; padding-bottom:calc(68px + env(safe-area-inset-bottom)); }
+header{ position:sticky; top:0; z-index:20; background:var(--acc2); color:#fff; padding:calc(10px + env(safe-area-inset-top)) 16px 10px; display:flex; align-items:center; gap:10px; }
+:root[data-theme="dark"] header{ background:#10302A; } @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) header{ background:#10302A; } }
+header h1{ font-size:17px; margin:0; font-weight:700; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+header .sub{ font-size:12px; opacity:.8; font-weight:500; }
+header button{ background:rgba(255,255,255,.14); color:#fff; border:0; border-radius:10px; height:36px; min-width:36px; padding:0 10px; font-size:15px; }
+main{ padding:12px 12px 24px; max-width:760px; margin:0 auto; }
+nav.tabs{ position:fixed; bottom:0; left:0; right:0; z-index:30; background:var(--card); border-top:1px solid var(--line); display:flex; padding-bottom:env(safe-area-inset-bottom); }
+nav.tabs button{ flex:1; background:none; border:0; color:var(--mute); padding:7px 2px 6px; font-size:11px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+nav.tabs button svg{ width:24px; height:24px; }
+nav.tabs button.on{ color:var(--acc); font-weight:700; }
+.card{ background:var(--card); border-radius:14px; padding:14px; margin:0 0 12px; box-shadow:var(--shadow); border:1px solid var(--line); }
+.card h2{ font-size:16px; margin:0 0 8px; }
+.card h3{ font-size:14px; margin:12px 0 6px; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; }
+.row{ display:flex; gap:8px; align-items:center; }
+.row > *{ flex:1; }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+label.f{ display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--mute); }
+label.f > input, label.f > select, label.f > .row{ margin-top:auto; }
+label.f span.u{ color:var(--mute); opacity:.8; }
+input,select,textarea{ font:inherit; font-size:16px; color:var(--ink); background:var(--soft); border:1px solid var(--line); border-radius:10px; padding:9px 10px; width:100%; min-width:0; }
+input:focus,select:focus,textarea:focus{ outline:2px solid var(--acc); outline-offset:0; background:var(--card); }
+input.filled{ background:var(--accsoft); border-color:var(--acc); }
+input.calc{ border-style:dashed; }
+textarea{ min-height:80px; resize:vertical; }
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; border:0; border-radius:12px; padding:11px 14px; font:inherit; font-weight:600; background:var(--acc); color:var(--onacc); min-height:44px; }
+.btn.sec{ background:var(--accsoft); color:var(--acc2); } :root[data-theme="dark"] .btn.sec{ color:var(--acc2); }
+.btn.ghost{ background:transparent; color:var(--acc); border:1px solid var(--line); }
+.btn.danger{ background:var(--badsoft); color:var(--bad); }
+.btn.sm{ min-height:34px; padding:6px 10px; font-size:13px; border-radius:10px; }
+.btn.wide{ width:100%; }
+.btns{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.btns .btn{ flex:1; }
+.muted{ color:var(--mute); } .small{ font-size:12.5px; } .tiny{ font-size:11.5px; }
+.res{ background:var(--soft); border-radius:12px; padding:10px 12px; margin-top:10px; }
+.res .big{ font-size:22px; font-weight:800; color:var(--acc2); }
+.res table{ width:100%; border-collapse:collapse; } .res td{ padding:3px 0; border-bottom:1px dashed var(--line); } .res td:last-child{ text-align:right; font-weight:700; }
+.res tr:last-child td{ border-bottom:0; }
+.pill{ display:inline-block; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--soft); color:var(--mute); }
+.pill.bad{ background:var(--badsoft); color:var(--bad); } .pill.warn{ background:var(--warnsoft); color:var(--warn); } .pill.ok{ background:var(--oksoft); color:var(--ok); } .pill.acc{ background:var(--accsoft); color:var(--acc2); }
+.alert{ display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; margin-bottom:8px; font-size:14px; }
+.alert.bad{ background:var(--badsoft); } .alert.warn{ background:var(--warnsoft); } .alert.info{ background:var(--infosoft); }
+.alert b{ display:block; }
+.list{ display:flex; flex-direction:column; }
+.li{ display:flex; align-items:center; gap:10px; padding:11px 2px; border-bottom:1px solid var(--line); }
+.li:last-child{ border-bottom:0; }
+.li .main{ flex:1; min-width:0; } .li .t{ font-weight:650; } .li .s{ font-size:12.5px; color:var(--mute); }
+.li .v{ text-align:right; font-weight:700; white-space:nowrap; }
+.chips{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+.chips::-webkit-scrollbar{ display:none; }
+.chip{ border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:6px 12px; font:inherit; font-size:13px; white-space:nowrap; }
+.chip.on{ background:var(--acc); color:var(--onacc); border-color:var(--acc); }
+.seg{ display:flex; background:var(--soft); border-radius:12px; padding:3px; gap:3px; margin-bottom:10px; }
+.seg button{ flex:1; border:0; background:none; font:inherit; font-size:13.5px; padding:8px 4px; border-radius:9px; color:var(--mute); }
+.seg button.on{ background:var(--card); color:var(--ink); font-weight:700; box-shadow:var(--shadow); }
+.kv{ display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:6px; }
+.kv div{ background:var(--soft); border-radius:10px; padding:6px 8px; }
+.kv div small{ display:block; font-size:11px; color:var(--mute); } .kv div b{ font-size:15px; }
+.tbl{ width:100%; border-collapse:collapse; font-size:13px; }
+.tbl th,.tbl td{ padding:6px 6px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+.tbl th{ font-size:11.5px; color:var(--mute); font-weight:600; position:sticky; top:0; background:var(--card); }
+.tbl td.n{ text-align:right; font-variant-numeric:tabular-nums; }
+.scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.fab{ position:fixed; right:16px; bottom:calc(80px + env(safe-area-inset-bottom)); z-index:25; width:56px; height:56px; border-radius:18px; border:0; background:var(--acc); color:var(--onacc); font-size:28px; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+.sheet-bg{ position:fixed; inset:0; background:rgba(0,0,0,.42); z-index:50; display:flex; align-items:flex-end; justify-content:center; }
+.sheet{ background:var(--card); width:100%; max-width:760px; max-height:94vh; overflow:auto; border-radius:18px 18px 0 0; padding:14px 14px calc(18px + env(safe-area-inset-bottom)); }
+.sheet .hd{ display:flex; align-items:center; gap:8px; margin-bottom:10px; position:sticky; top:-14px; background:var(--card); padding:6px 0; z-index:2; }
+.sheet .hd h2{ flex:1; margin:0; font-size:17px; }
+.sheet .hd button{ border:0; background:var(--soft); color:var(--ink); border-radius:10px; width:36px; height:36px; font-size:18px; }
+.grp{ margin-top:12px; } .grp > .gt{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--acc); margin:0 0 6px; }
+.toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(140px + env(safe-area-inset-bottom)); background:#1F2B29; color:#fff; padding:10px 16px; border-radius:12px; z-index:80; font-size:14px; max-width:90vw; text-align:center; }
+.empty{ text-align:center; color:var(--mute); padding:22px 8px; font-size:14px; }
+details.calc{ background:var(--card); border:1px solid var(--line); border-radius:14px; margin-bottom:10px; box-shadow:var(--shadow); }
+details.calc > summary{ list-style:none; padding:14px; font-weight:700; display:flex; align-items:center; gap:10px; cursor:pointer; }
+details.calc > summary::-webkit-details-marker{ display:none; }
+details.calc > summary .ic{ width:34px; height:34px; border-radius:10px; background:var(--accsoft); color:var(--acc2); display:flex; align-items:center; justify-content:center; font-size:17px; flex:none; }
+details.calc > summary small{ display:block; font-weight:400; color:var(--mute); font-size:12px; }
+details.calc > .body{ padding:0 14px 14px; }
+details.calc[open] > summary{ border-bottom:1px solid var(--line); margin-bottom:12px; }
+.chart{ width:100%; height:170px; display:block; }
+.note{ font-size:12.5px; color:var(--mute); margin-top:8px; }
+.badge-n{ min-width:20px; height:20px; border-radius:10px; background:var(--bad); color:#fff; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; padding:0 5px; }
+.hl{ background:var(--warnsoft); }
+.printonly{ display:none; }
+@media print{
+  header,nav.tabs,.fab,.noprint{ display:none !important; } body{ padding:0; background:#fff; color:#000; } .printonly{ display:block; }
+  main{ display:none; } .sheet-bg{ display:none; }
+}
+</style></head>
+<body><header id="hdr"></header><main id="main"></main><nav class="tabs" id="tabs"></nav>
+<script>'use strict';
+const SEED = [{"id": "caustic", "name": "CAUSTIC SODA", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "ph", "docs": [{"type": "ПБ", "until": "2029-05-20"}], "min": 0}, {"id": "lime", "name": "LIME", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "ph", "docs": [{"type": "ПБ", "until": "2031-09-07"}], "min": 0}, {"id": "soda", "name": "SODA ASH", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "ph", "docs": [{"type": "ПБ", "until": "2028-12-09"}], "min": 0}, {"id": "bicarb", "name": "SODIUM BICARBONATE", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "ph", "docs": [{"type": "ПБ", "until": "2028-08-02"}], "min": 0}, {"id": "citric", "name": "CITRIC ACID", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "ph", "docs": [{"type": "ПБ", "until": "2027-12-07"}], "min": 0}, {"id": "kcl", "name": "POTASSIUM CHLORIDE", "grade": "", "unit": "кг", "pack": 1000, "packName": "МКР", "cat": "salt", "docs": [{"type": "ПБ", "until": "2028-10-17"}], "min": 0}, {"id": "nacl", "name": "SODIUM CHLORIDE", "grade": "", "unit": "кг", "pack": 1000, "packName": "МКР", "cat": "salt", "docs": [{"type": "ПБ", "until": "2029-10-07"}], "min": 0}, {"id": "cacl2", "name": "CALCIUM CHLORIDE", "grade": "", "unit": "кг", "pack": 1000, "packName": "МКР", "cat": "salt", "docs": [{"type": "ПБ", "until": "2029-04-24"}], "min": 0}, {"id": "bent", "name": "BENTOLUX API", "grade": "", "unit": "кг", "pack": 900, "packName": "МКР", "cat": "visc", "docs": [{"type": "ПБ", "until": "2030-03-13"}], "min": 0}, {"id": "xanthan", "name": "XANTHAN GUM", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "visc", "docs": [{"type": "ПБ", "until": "2027-12-21"}], "min": 0}, {"id": "pac-lv", "name": "PAC", "grade": "LV", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "fl", "docs": [{"type": "ПБ", "until": "2028-04-17"}], "min": 0}, {"id": "pac-hv", "name": "PAC", "grade": "HV", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "fl", "docs": [{"type": "ПБ", "until": "2028-04-17"}], "min": 0}, {"id": "burstarch", "name": "BURSTARCH", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "fl", "docs": [{"type": "ПБ", "until": "2028-02-27"}], "min": 0}, {"id": "dextrid", "name": "DEXTRID LTE", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "fl", "docs": [{"type": "ПБ", "until": "2029-05-13"}], "min": 0}, {"id": "burpol", "name": "BURPOL PLUS", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "fl", "docs": [{"type": "ПБ", "until": "2028-06-22"}], "min": 0}, {"id": "bdf985", "name": "BDF-985", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "fl", "docs": [{"type": "ПБ", "until": "2028-12-18"}], "min": 0}, {"id": "burflc", "name": "BURFLC-490", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "fl", "docs": [{"type": "ПБ", "until": "2028-11-14"}], "min": 0}, {"id": "ezmud", "name": "EZ-MUD DP", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "inh", "docs": [{"type": "ПБ", "until": "2028-03-01"}], "min": 0}, {"id": "bursure", "name": "BURSURE-590", "grade": "", "unit": "кг", "pack": 230, "packName": "бочка", "cat": "inh", "docs": [{"type": "ПБ", "until": "2028-11-22"}], "min": 0}, {"id": "burgem", "name": "BURGEM GPE", "grade": "", "unit": "л", "pack": 208, "packName": "бочка", "cat": "inh", "docs": [{"type": "ПБ", "until": "2028-02-07"}], "min": 0}, {"id": "shale", "name": "SHALE STABILIZER", "grade": "", "unit": "л", "pack": 200, "packName": "бочка", "cat": "inh", "docs": [{"type": "ПБ", "until": "2028-08-09"}], "min": 0}, {"id": "bxrl", "name": "BXR-L", "grade": "", "unit": "кг", "pack": 215, "packName": "бочка", "cat": "inh", "docs": [{"type": "ПБ", "until": "2030-02-24"}], "min": 0}, {"id": "burblok", "name": "BURBLOK", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "inh", "docs": [{"type": "ПБ", "until": "2028-06-30"}], "min": 0}, {"id": "buroil", "name": "BUROIL", "grade": "", "unit": "л", "pack": 1000, "packName": "IBC", "cat": "obm", "docs": [{"type": "ПБ", "until": "2031-01-21"}], "min": 0}, {"id": "burmul", "name": "BUR MUL NT / NTR", "grade": "", "unit": "кг", "pack": 190, "packName": "бочка", "cat": "obm", "docs": [{"type": "ПБ", "until": "2029-10-18"}], "min": 0}, {"id": "ezmulnt", "name": "EZ MUL NT", "grade": "", "unit": "л", "pack": 208, "packName": "бочка", "cat": "obm", "docs": [{"type": "ПБ", "until": "2029-10-23"}], "min": 0}, {"id": "burtreat", "name": "BURTREAT", "grade": "", "unit": "кг", "pack": 190, "packName": "бочка", "cat": "obm", "docs": [{"type": "ПБ", "until": "2027-12-05"}], "min": 0}, {"id": "burgel", "name": "GELTONE II", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "obm", "docs": [{"type": "ПБ", "until": "2028-08-23"}], "min": 0}, {"id": "rm63", "name": "RMR-63", "grade": "", "unit": "л", "pack": 208, "packName": "бочка", "cat": "obm", "docs": [{"type": "ПБ", "until": "2030-05-19"}], "min": 0}, {"id": "burtone", "name": "BURTONE R", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "obm", "docs": [{"type": "ПБ", "until": "2028-12-01"}], "min": 0}, {"id": "bdf612", "name": "BDF-612", "grade": "", "unit": "кг", "pack": 200, "packName": "бочка", "cat": "lub", "docs": [{"type": "ПБ", "until": "2027-08-03"}], "min": 0}, {"id": "burnslide", "name": "BUR-N-SLIDE", "grade": "", "unit": "кг", "pack": 190, "packName": "бочка", "cat": "lub", "docs": [{"type": "ПБ", "until": "2028-10-09"}], "min": 0}, {"id": "torq22", "name": "TORQ-TRIM 22", "grade": "", "unit": "кг", "pack": 185, "packName": "бочка", "cat": "lub", "docs": [{"type": "ПБ", "until": "2028-11-08"}], "min": 0}, {"id": "torq2", "name": "TORQ-TRIM II PLUS", "grade": "", "unit": "кг", "pack": 185, "packName": "бочка", "cat": "lub", "docs": [{"type": "ПБ", "until": "2029-01-25"}], "min": 0}, {"id": "glital", "name": "GLITAL", "grade": "", "unit": "кг", "pack": 200, "packName": "бочка", "cat": "lub", "docs": [{"type": "ПБ", "until": "2031-06-18"}], "min": 0}, {"id": "stuckless", "name": "STUCKLESS", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lub", "docs": [{"type": "ПБ", "until": "2028-01-10"}], "min": 0}, {"id": "detergent", "name": "BUR DETERGENT", "grade": "", "unit": "л", "pack": 208, "packName": "бочка", "cat": "lub", "docs": [{"type": "ПБ", "until": "2029-10-23"}], "min": 0}, {"id": "burmuld", "name": "BURMUL D", "grade": "", "unit": "л", "pack": 200, "packName": "бочка", "cat": "lub", "docs": [{"type": "ПБ", "until": "2029-11-07"}], "min": 0}, {"id": "defoam", "name": "BURDEFOAM", "grade": "", "unit": "л", "pack": 20, "packName": "канистра", "cat": "lub", "docs": [{"type": "ПБ", "until": "2028-12-18"}], "min": 0}, {"id": "barite", "name": "BARITE", "grade": "", "unit": "кг", "pack": 1000, "packName": "МКР", "cat": "wt", "docs": [{"type": "ПБ", "until": "2031-03-20"}], "min": 0}, {"id": "burcarb-5", "name": "BURCARB", "grade": "5", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "wt", "docs": [{"type": "ПБ", "until": "2028-12-26"}], "min": 0}, {"id": "burcarb-25", "name": "BURCARB", "grade": "25", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "wt", "docs": [{"type": "ПБ", "until": "2028-12-26"}], "min": 0}, {"id": "burcarb-50", "name": "BURCARB", "grade": "50", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "wt", "docs": [{"type": "ПБ", "until": "2028-12-26"}], "min": 0}, {"id": "burcarb-150", "name": "BURCARB", "grade": "150", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "wt", "docs": [{"type": "ПБ", "until": "2028-12-26"}], "min": 0}, {"id": "burcarb-600", "name": "BURCARB", "grade": "600", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "wt", "docs": [{"type": "ПБ", "until": "2028-12-26"}], "min": 0}, {"id": "burcarb-1200", "name": "BURCARB", "grade": "1200", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "wt", "docs": [{"type": "ПБ", "until": "2028-12-26"}], "min": 0}, {"id": "burcarb-2300", "name": "BURCARB", "grade": "2300", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "wt", "docs": [{"type": "ПБ", "until": "2028-12-26"}], "min": 0}, {"id": "caco3fine", "name": "CALCIUM CARBONATE FINE", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "wt", "docs": [{"type": "ПБ", "until": "2028-11-27"}], "min": 0}, {"id": "mica-fine", "name": "MICA", "grade": "Fine", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2028-11-07"}], "min": 0}, {"id": "mica-medium", "name": "MICA", "grade": "Medium", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2028-11-07"}], "min": 0}, {"id": "mica-coarse", "name": "MICA", "grade": "Coarse", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2028-11-07"}], "min": 0}, {"id": "nutshell-ultrafine", "name": "NUT SHELL", "grade": "Ultra Fine", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2028-08-07"}], "min": 0}, {"id": "nutshell-fine", "name": "NUT SHELL", "grade": "Fine", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2028-08-07"}], "min": 0}, {"id": "nutshell-medium", "name": "NUT SHELL", "grade": "Medium", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2028-08-07"}], "min": 0}, {"id": "nutshell-coarse", "name": "NUT SHELL", "grade": "Coarse", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2028-08-07"}], "min": 0}, {"id": "steelseal-100fine", "name": "STEEL SEAL", "grade": "100 (Fine)", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2030-10-17"}], "min": 0}, {"id": "steelseal-400medium", "name": "STEEL SEAL", "grade": "400 (Medium)", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2030-10-17"}], "min": 0}, {"id": "graphite-fine", "name": "GRAPHITE", "grade": "Fine", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2030-03-31"}], "min": 0}, {"id": "graphite-medium", "name": "GRAPHITE", "grade": "Medium", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2030-03-31"}], "min": 0}, {"id": "graphite-coarse", "name": "GRAPHITE", "grade": "Coarse", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2030-03-31"}], "min": 0}, {"id": "cp1-fine", "name": "CP-1", "grade": "Fine", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-07-23"}], "min": 0}, {"id": "cp1-medium", "name": "CP-1", "grade": "Medium", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-07-23"}], "min": 0}, {"id": "cp1-coarse", "name": "CP-1", "grade": "Coarse", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-07-23"}], "min": 0}, {"id": "superbridge", "name": "SUPERBRIDGE", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-08-21"}], "min": 0}, {"id": "wooddust-fine", "name": "WOOD DUST", "grade": "Fine", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-06-06"}], "min": 0}, {"id": "wooddust-medium", "name": "WOOD DUST", "grade": "Medium", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-06-06"}], "min": 0}, {"id": "wooddust-coarse", "name": "WOOD DUST", "grade": "Coarse", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-06-06"}], "min": 0}, {"id": "burflake-fine", "name": "BURFLAKE", "grade": "Fine", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-10-23"}], "min": 0}, {"id": "burflake-medium", "name": "BURFLAKE", "grade": "Medium", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-10-23"}], "min": 0}, {"id": "burflake-coarse", "name": "BURFLAKE", "grade": "Coarse", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-10-23"}], "min": 0}, {"id": "burfix", "name": "BURFIX", "grade": "", "unit": "кг", "pack": 25, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2029-04-22"}], "min": 0}, {"id": "buralift-fine", "name": "BURALIFT", "grade": "Fine", "unit": "кг", "pack": 10, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2028-09-22"}], "min": 0}, {"id": "buralift-medium", "name": "BURALIFT", "grade": "Medium", "unit": "кг", "pack": 10, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2028-09-22"}], "min": 0}, {"id": "buralift-coarse", "name": "BURALIFT", "grade": "Coarse", "unit": "кг", "pack": 10, "packName": "мешок", "cat": "lcm", "docs": [{"type": "ПБ", "until": "2028-09-22"}], "min": 0}, {"id": "microbiocide", "name": "MICROBIOCIDE", "grade": "", "unit": "л", "pack": 20, "packName": "канистра", "cat": "spec", "docs": [{"type": "ПБ", "until": "2026-10-16"}], "min": 0}];
+/* ───────────── базовые утилиты ───────────── */
+const VERSION = '1.0';
+const KEY = 'burjournal.v1';
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const num = v => { if (v === null || v === undefined) return NaN; const s = String(v).trim().replace(/\s/g, '').replace(',', '.'); if (s === '') return NaN; return Number(s); };
+const has = v => Number.isFinite(v);
+function fmt(v, d = 2) {
+  if (!has(v)) return '—';
+  const r = Math.abs(v) >= 1000 ? 0 : d;
+  return v.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: r });
+}
+const pad = n => String(n).padStart(2, '0');
+function today() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+function nowTime() { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function ruDate(iso) { if (!iso) return '—'; const [y, m, d] = iso.split('-'); return `${d}.${m}.${y}`; }
+function shortDate(iso) { if (!iso) return ''; const [, m, d] = iso.split('-'); return `${d}.${m}`; }
+function daysTo(iso) { if (!iso) return Infinity; const a = new Date(today() + 'T00:00:00'), b = new Date(iso + 'T00:00:00'); return Math.round((b - a) / 864e5); }
+function parseRuDate(s) { // 28.11.2028 → 2028-11-28
+  if (!s) return ''; s = String(s).trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if (m) return s;
+  m = s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/); if (!m) return '';
+  let y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${pad(m[2])}-${pad(m[1])}`;
+}
+
+/* ───────────── хранилище ───────────── */
+const DEF_SETTINGS = { pad: '', well: '', ypUnit: 'дПа', warnDays: 90, levelUnit: 'см', theme: 'auto',
+  rho: { barite: 4.2, chalk: 2.7, oil: 0.86, water: 1.0, kcl: 1.98, cacl2: 2.16 }, purity: { kcl: 95, cacl2: 94 }, lastBackup: '' };
+function blank() { return { v: 1, settings: structuredClone(DEF_SETTINGS), mud: [], tanks: [], snaps: [], items: structuredClone(SEED), batches: [], moves: [], docs: [] }; }
+let S;
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) { S = JSON.parse(raw); } } catch (e) { S = null; }
+  if (!S || typeof S !== 'object') S = blank();
+  const b = blank();
+  for (const k of Object.keys(b)) if (S[k] === undefined) S[k] = b[k];
+  S.settings = Object.assign(structuredClone(DEF_SETTINGS), S.settings || {});
+  S.settings.rho = Object.assign({}, DEF_SETTINGS.rho, S.settings.rho || {});
+  S.settings.purity = Object.assign({}, DEF_SETTINGS.purity, S.settings.purity || {});
+}
+let saveFail = false;
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); saveFail = false; }
+  catch (e) { if (!saveFail) toast('Не удалось сохранить данные в памяти телефона'); saveFail = true; }
+}
+function applyTheme() { const t = S.settings.theme; if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t); }
+
+/* ───────────── UI-примитивы ───────────── */
+let toastT;
+function toast(msg) { let t = $('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 2600); }
+function sheet(title, html, onMount) {
+  closeSheet();
+  const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  bg.innerHTML = `<div class="sheet" role="dialog"><div class="hd"><h2>${esc(title)}</h2><button data-x aria-label="Закрыть">✕</button></div><div class="sb">${html}</div></div>`;
+  bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('[data-x]')) closeSheet(); });
+  document.body.appendChild(bg); document.body.style.overflow = 'hidden';
+  if (onMount) onMount($('.sheet', bg));
+  return $('.sheet', bg);
+}
+function closeSheet() { $$('.sheet-bg').forEach(x => x.remove()); document.body.style.overflow = ''; }
+function confirmBox(msg, ok) { sheet('Подтвердите', `<p>${esc(msg)}</p><div class="btns"><button class="btn ghost" data-x>Отмена</button><button class="btn danger" id="cfOk">Да</button></div>`, sh => { $('#cfOk', sh).onclick = () => { closeSheet(); ok(); }; }); }
+function F(id, label, val = '', unit = '', attrs = '') {
+  return `<label class="f">${esc(label)}${unit ? ` <span class="u">${esc(unit)}</span>` : ''}<input id="${id}" value="${esc(val)}" inputmode="decimal" autocomplete="off" ${attrs}></label>`;
+}
+function Sel(id, label, opts, val) { return `<label class="f">${esc(label)}<select id="${id}">${opts.map(o => { const [v, t] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(v)}" ${String(v) === String(val) ? 'selected' : ''}>${esc(t)}</option>`; }).join('')}</select></label>`; }
+const V = (id, root = document) => num($('#' + id, root)?.value);
+const T = (id, root = document) => ($('#' + id, root)?.value ?? '').trim();
+function download(name, text, type = 'text/plain') {
+  const blob = new Blob([text], { type: type + ';charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+async function shareOrDownload(name, text, type) {
+  try {
+    const file = new File([text], name, { type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  download(name, text, type);
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); toast('Скопировано'); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('Скопировано'); } catch (_) { toast('Не удалось скопировать'); } ta.remove(); }
+}
+function csv(rows) { return '﻿' + rows.map(r => r.map(c => { const s = String(c ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(';')).join('\r\n'); }
+const csvNum = v => has(v) ? String(Math.round(v * 1000) / 1000).replace('.', ',') : '';
+
+/* ───────────── журнал параметров раствора ───────────── */
+// syn — подписи, по которым распознаётся текст (порядок важен: длинные раньше коротких)
+const P = [
+  { k: 'dens', l: 'Плотность', u: 'г/см³', g: 'Плотность и реология', syn: ['плотность', 'плотн', 'пл', 'ρ', 'уд\\.?\\s?вес', 'mw', 'p'] },
+  { k: 'fv', l: 'УВ', u: 'с', g: 'Плотность и реология', syn: ['усл\\.?\\s?вязк\\S*', 'ув', 'fv', 'т500'] },
+  { k: 'r600', l: 'θ600', u: '', g: 'Плотность и реология', syn: ['θ\\s?600', 'ф\\s?600', 'r\\s?600', '600'] },
+  { k: 'r300', l: 'θ300', u: '', g: 'Плотность и реология', syn: ['θ\\s?300', 'ф\\s?300', 'r\\s?300', '300'] },
+  { k: 'r200', l: 'θ200', u: '', g: 'Плотность и реология', syn: ['θ\\s?200', 'r\\s?200', '200'] },
+  { k: 'r100', l: 'θ100', u: '', g: 'Плотность и реология', syn: ['θ\\s?100', 'r\\s?100', '100'] },
+  { k: 'r6', l: 'θ6', u: '', g: 'Плотность и реология', syn: ['θ\\s?6', 'r\\s?6', '6'] },
+  { k: 'r3', l: 'θ3', u: '', g: 'Плотность и реология', syn: ['θ\\s?3', 'r\\s?3', '3'] },
+  { k: 'pv', l: 'ПВ', u: 'сП', g: 'Плотность и реология', syn: ['пласт\\S*\\s?вязк\\S*', 'пв', 'pv', 'η'] },
+  { k: 'yp', l: 'ДНС', u: 'YP', g: 'Плотность и реология', syn: ['днс', 'yp', 'τ0', 'το'] },
+  { k: 'g10s', l: 'СНС 10 с', u: 'YP', g: 'Плотность и реология', syn: [] },
+  { k: 'g10m', l: 'СНС 10 мин', u: 'YP', g: 'Плотность и реология', syn: [] },
+  { k: 'fl', l: 'Ф API', u: 'мл/30 мин', g: 'Фильтрация', syn: ['водоотд\\S*', 'фильтр\\S*', 'ф\\s?api', 'api', 'ф30', 'ф', 'fl', 'в'] },
+  { k: 'cake', l: 'Корка', u: 'мм', g: 'Фильтрация', syn: ['корка', 'cake', 'к'] },
+  { k: 'hthp', l: 'Ф HTHP', u: 'мл', g: 'Фильтрация', syn: ['hthp', 'hpht', 'втвд', 'ф\\s?вт', 'вт'] },
+  { k: 'ph', l: 'pH', u: '', g: 'Химия', syn: ['ph', 'рн', 'рh', 'pн'] },
+  { k: 'pf', l: 'Pf', u: 'мл', g: 'Химия', syn: ['pf', 'рф', 'пф'] },
+  { k: 'mf', l: 'Mf', u: 'мл', g: 'Химия', syn: ['mf', 'мф'] },
+  { k: 'pm', l: 'Pm', u: 'мл', g: 'Химия', syn: ['pm', 'рм', 'пм'] },
+  { k: 'cl', l: 'Cl⁻', u: 'мг/л', g: 'Химия', syn: ['хлориды', 'хлор\\S*', 'cl[-⁻]?', 'сl'] },
+  { k: 'ca', l: 'Ca²⁺', u: 'мг/л', g: 'Химия', syn: ['кальций', 'кальц\\S*', 'ca[2²]?[+⁺]?', 'са'] },
+  { k: 'hard', l: 'Жёсткость', u: 'мг/л', g: 'Химия', syn: ['жестк\\S*', 'жёстк\\S*', 'ж'] },
+  { k: 'kcl', l: 'KCl', u: '%', g: 'Химия', syn: ['kcl', 'ксl', 'кcl'] },
+  { k: 'kion', l: 'K⁺', u: 'мг/л', g: 'Химия', syn: ['калий', 'k[+⁺]', 'к[+⁺]'] },
+  { k: 'solids', l: 'Тв. фаза', u: '%', g: 'Твёрдая фаза', syn: ['тв\\.?\\s?фаз\\S*', 'твердая фаза', 'твёрдая фаза', 'тф', 'тв'] },
+  { k: 'water', l: 'Вода', u: '%', g: 'Твёрдая фаза', syn: ['вода', 'h2o'] },
+  { k: 'oil', l: 'Масло', u: '%', g: 'Твёрдая фаза', syn: ['масло', 'нефть', 'oil', 'ув-основа'] },
+  { k: 'sand', l: 'Песок', u: '%', g: 'Твёрдая фаза', syn: ['песок', 'sand'] },
+  { k: 'mbt', l: 'МБТ', u: 'кг/м³', g: 'Твёрдая фаза', syn: ['мбт', 'mbt', 'мвт'] },
+  { k: 'es', l: 'ЭС', u: 'В', g: 'РУО', sys: 'РУО', syn: ['эл\\.?\\s?стаб\\S*', 'эс', 'es'] },
+  { k: 'pom', l: 'Pom', u: 'мл', g: 'РУО', sys: 'РУО', syn: ['pom', 'ром'] },
+  { k: 'temp', l: 't выход', u: '°C', g: 'Прочее', syn: ['темп\\S*', 't\\s?вых\\S*', 't', 'т°'] },
+  { k: 'depth', l: 'Забой', u: 'м', g: 'Прочее', syn: ['забой', 'глуб\\S*', 'h'] },
+];
+const PK = Object.fromEntries(P.map(p => [p.k, p]));
+const KEYP = ['dens', 'fv', 'pv', 'yp', 'gel', 'fl', 'ph', 'cl', 'ca', 'solids', 'es', 'kcl'];
+const ypU = () => S.settings.ypUnit;
+function unitOf(p) { return p.u === 'YP' ? ypU() : p.u; }
+
+function derived(r) { // расчётные величины по записи
+  const v = r.v || {}, o = {};
+  const R6 = num(v.r600), R3 = num(v.r300);
+  if (has(R6) && has(R3)) {
+    o.pv = R6 - R3; const ypLb = R3 - o.pv;
+    o.yp = ypU() === 'дПа' ? ypLb * 4.79 : ypU() === 'Па' ? ypLb * 0.479 : ypLb;
+  }
+  const w = num(v.water), oil = num(v.oil);
+  if (has(w) && has(oil) && w + oil > 0) o.owr = `${Math.round(oil / (oil + w) * 100)}/${Math.round(w / (oil + w) * 100)}`;
+  if (r.sys === 'РУО' && has(num(v.pom))) o.lime = 3.69 * num(v.pom);
+  if (r.sys !== 'РУО' && has(num(v.pm)) && has(num(v.pf))) { const fw = has(w) ? w / 100 : NaN; if (has(fw)) o.lime = 0.742 * (num(v.pm) - num(v.pf) * fw); }
+  return o;
+}
+function disp(r, k) { const raw = r.v?.[k]; if (k !== 'gel' && raw !== undefined && raw !== '') return String(raw).replace('.', ','); const x = val(r, k); return x === '' || x === undefined || (typeof x === 'number' && !has(x)) ? '' : typeof x === 'number' ? fmt(x, 2) : x; }
+function val(r, k) { const v = r.v || {}; if (k === 'gel') return (v.g10s || v.g10m) ? `${v.g10s ?? '—'}/${v.g10m ?? '—'}` : ''; if (has(num(v[k]))) return num(v[k]); const d = derived(r); return d[k]; }
+
+let mudChart = 'dens';
+function renderMud() {
+  const recs = [...S.mud].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  let h = `<div class="btns noprint" style="margin-top:0"><button class="btn" data-act="mudNew">＋ Новый замер</button><button class="btn sec" data-act="mudPaste">Из текста / фото</button></div>`;
+  if (recs.length >= 2) {
+    const opts = [['dens', 'ρ'], ['fv', 'УВ'], ['pv', 'ПВ'], ['yp', 'ДНС'], ['g10s', 'СНС10с'], ['fl', 'Ф'], ['ph', 'pH'], ['cl', 'Cl⁻'], ['ca', 'Ca²⁺'], ['solids', 'ТФ'], ['mbt', 'МБТ'], ['kcl', 'KCl'], ['es', 'ЭС']];
+    h += `<div class="card"><div class="chips">${opts.map(([k, t]) => `<button class="chip ${mudChart === k ? 'on' : ''}" data-act="mudChart" data-k="${k}">${t}</button>`).join('')}</div>${chartSVG(recs.slice().reverse(), mudChart)}</div>`;
+  }
+  if (!recs.length) h += `<div class="card empty">Пока нет замеров.<br>Нажмите «＋ Новый замер» или вставьте текст с бумажного листа.</div>`;
+  let lastDate = '';
+  h += '<div class="card"><div class="list">';
+  for (const r of recs) {
+    if (r.date !== lastDate) { h += `<div class="tiny muted" style="padding-top:10px;font-weight:700">${ruDate(r.date)}</div>`; lastDate = r.date; }
+    const parts = [];
+    for (const k of KEYP) { const x = disp(r, k); if (x !== '') parts.push(`${k === 'gel' ? 'СНС' : PK[k].l} ${x}`); }
+    h += `<div class="li" data-act="mudEdit" data-id="${r.id}"><div class="main"><div class="t">${esc(r.time || '')} · ${esc(r.sys)}${r.point ? ' · ' + esc(r.point) : ''}${has(num(r.v?.depth)) ? ' · ' + fmt(num(r.v.depth), 0) + ' м' : ''}</div><div class="s">${esc(parts.join(' · ') || 'нет данных')}</div>${r.treat ? `<div class="s">🧪 ${esc(r.treat)}</div>` : ''}</div><div class="v">›</div></div>`;
+  }
+  h += '</div></div>';
+  h += `<div class="btns noprint"><button class="btn ghost" data-act="mudCSV">Таблица CSV</button><button class="btn ghost" data-act="mudBlank">Бланк для печати</button></div>`;
+  return h;
+}
+
+function chartSVG(recs, k) {
+  const pts = recs.map(r => ({ x: r.date + ' ' + (r.time || ''), y: k === 'g10s' ? num(r.v?.g10s) : (typeof val(r, k) === 'number' ? val(r, k) : NaN) })).filter(p => has(p.y)).slice(-30);
+  if (pts.length < 2) return `<div class="empty small">Мало данных для графика</div>`;
+  const W = 340, H = 160, l = 34, r = 8, t = 10, b = 26;
+  let lo = Math.min(...pts.map(p => p.y)), hi = Math.max(...pts.map(p => p.y)); if (lo === hi) { lo -= 1; hi += 1; } const padv = (hi - lo) * 0.12; lo -= padv; hi += padv;
+  const X = i => l + i * (W - l - r) / (pts.length - 1), Y = y => t + (hi - y) * (H - t - b) / (hi - lo);
+  const path = pts.map((p, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(p.y).toFixed(1)}`).join('');
+  const ticks = [lo + padv, (lo + hi) / 2, hi - padv];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="График">
+${ticks.map(v => `<line x1="${l}" x2="${W - r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${l - 4}" y="${Y(v) + 4}" font-size="10" text-anchor="end" fill="var(--mute)">${fmt(v, 2)}</text>`).join('')}
+<path d="${path}" fill="none" stroke="var(--acc)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+${pts.map((p, i) => `<circle cx="${X(i)}" cy="${Y(p.y)}" r="${i === pts.length - 1 ? 4 : 2.6}" fill="var(--acc)"><title>${esc(p.x)}: ${fmt(p.y, 3)}</title></circle>`).join('')}
+<text x="${l}" y="${H - 8}" font-size="10" fill="var(--mute)">${esc(shortDate(pts[0].x.slice(0, 10)))}</text><text x="${W - r}" y="${H - 8}" font-size="10" text-anchor="end" fill="var(--mute)">${esc(shortDate(pts.at(-1).x.slice(0, 10)))} · ${fmt(pts.at(-1).y, 3)}</text></svg>`;
+}
+
+function mudForm(rec, prefill) {
+  const isNew = !rec;
+  const last = [...S.mud].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))[0];
+  rec = rec || { id: uid(), date: today(), time: nowTime(), sys: last?.sys || 'РВО', point: last?.point || 'выход', v: {}, treat: '', note: '' };
+  const v = Object.assign({}, rec.v, prefill || {});
+  const groups = [...new Set(P.map(p => p.g))];
+  let h = `<div class="grid2">${F('m_date', 'Дата', rec.date, '', 'type="date" inputmode="none"')}${F('m_time', 'Время', rec.time, '', 'type="time" inputmode="none"')}</div>
+<div class="grid2" style="margin-top:8px">${Sel('m_sys', 'Система', ['РВО', 'РУО'], rec.sys)}${Sel('m_point', 'Точка отбора', ['выход', 'приём', 'ёмкость', 'пачка'], rec.point)}</div>`;
+  for (const g of groups) {
+    const ps = P.filter(p => p.g === g);
+    h += `<div class="grp" data-grp="${esc(g)}"><div class="gt">${esc(g)}</div><div class="grid3">`;
+    for (const p of ps) { const filled = prefill && prefill[p.k] !== undefined; h += `<label class="f" ${p.sys ? `data-sys="${p.sys}"` : ''}>${esc(p.l)} <span class="u">${esc(unitOf(p))}</span><input id="mp_${p.k}" value="${esc(v[p.k] ?? '')}" inputmode="decimal" autocomplete="off" class="${filled ? 'filled' : ''}"></label>`; }
+    h += `</div></div>`;
+  }
+  h += `<div class="res" id="m_der"></div>
+<div class="grp"><div class="gt">Обработки и примечания</div><label class="f">Обработки за период<textarea id="m_treat" placeholder="Например: PAC LV 4 меш., KCl 2 МКР, разбавление 10 м³">${esc(rec.treat || '')}</textarea></label>
+<label class="f" style="margin-top:8px">Примечание<textarea id="m_note" style="min-height:56px">${esc(rec.note || '')}</textarea></label></div>
+<div class="btns">${isNew ? '' : '<button class="btn danger" id="m_del">Удалить</button>'}<button class="btn" id="m_save">Сохранить</button></div>`;
+  sheet(isNew ? 'Новый замер' : 'Замер ' + ruDate(rec.date), h, sh => {
+    const upd = () => {
+      const sys = $('#m_sys', sh).value;
+      $$('[data-sys]', sh).forEach(x => x.style.display = x.dataset.sys === sys ? '' : 'none');
+      $$('[data-grp="РУО"]', sh).forEach(x => x.style.display = sys === 'РУО' ? '' : 'none');
+      const tmp = { sys, v: {} }; for (const p of P) tmp.v[p.k] = $('#mp_' + p.k, sh).value;
+      const d = derived(tmp); const out = [];
+      if (has(d.pv) && !$('#mp_pv', sh).value) out.push(`ПВ = ${fmt(d.pv, 1)} сП`);
+      if (has(d.yp) && !$('#mp_yp', sh).value) out.push(`ДНС = ${fmt(d.yp, 1)} ${ypU()}`);
+      if (d.owr) out.push(`Масло/вода = ${d.owr}`);
+      if (has(d.lime)) out.push(`Избыток извести ≈ ${fmt(d.lime, 1)} кг/м³`);
+      $('#m_der', sh).innerHTML = out.length ? '<div class="small muted">Рассчитано автоматически</div>' + out.join('<br>') : '<div class="small muted">ПВ и ДНС посчитаются по θ600/θ300, избыток извести — по Pm, Pf и воде (РВО) или Pom (РУО).</div>';
+    };
+    sh.addEventListener('input', upd); upd();
+    $('#m_save', sh).onclick = () => {
+      rec.date = $('#m_date', sh).value || today(); rec.time = $('#m_time', sh).value || ''; rec.sys = $('#m_sys', sh).value; rec.point = $('#m_point', sh).value;
+      rec.v = {}; for (const p of P) { const x = $('#mp_' + p.k, sh).value.trim(); if (x !== '') rec.v[p.k] = x.replace(',', '.'); }
+      const d = derived(rec); if (rec.v.pv === undefined && has(d.pv)) rec.v.pv = String(Math.round(d.pv * 10) / 10); if (rec.v.yp === undefined && has(d.yp)) rec.v.yp = String(Math.round(d.yp * 10) / 10);
+      rec.treat = $('#m_treat', sh).value.trim(); rec.note = $('#m_note', sh).value.trim();
+      if (isNew) S.mud.push(rec); save(); closeSheet(); toast('Замер сохранён'); render();
+    };
+    if (!isNew) $('#m_del', sh).onclick = () => confirmBox('Удалить этот замер?', () => { S.mud = S.mud.filter(x => x.id !== rec.id); save(); render(); });
+  });
+}
+
+/* ───── распознавание текста ───── */
+function parseMud(text) {
+  const out = {};
+  let t = ' ' + String(text).toLowerCase().replace(/ё/g, 'е').replace(/[‐-–—]/g, '-').replace(/\r/g, '') + ' ';
+  t = t.replace(/(\d),(\d)/g, '$1.$2');
+  // СНС «10/15» или «снс 10с-4 10м-8»
+  let m = t.match(/(?:снс|gel\S*|гел\S*)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*[\/\\|]\s*(\d+(?:\.\d+)?)/);
+  if (m) { out.g10s = m[1]; out.g10m = m[2]; t = t.replace(m[0], ' '); }
+  else {
+    m = t.match(/(?:снс|gel)\s*10\s*(?:с|сек|s)\S*\s*[:=\-]?\s*(\d+(?:\.\d+)?)/); if (m) { out.g10s = m[1]; t = t.replace(m[0], ' '); }
+    m = t.match(/(?:снс|gel)?\s*10\s*(?:м|мин|min)\S*\s*[:=\-]?\s*(\d+(?:\.\d+)?)/); if (m) { out.g10m = m[1]; t = t.replace(m[0], ' '); }
+  }
+  // показания вискозиметра: строка «600-45 300-30 …» или «θ600 45»
+  for (const rpm of ['600', '300', '200', '100']) {
+    const re = new RegExp(`(?:θ|ф|r|п)?\\s?${rpm}\\s*(?:об\\S*)?\\s*[:=\\-]\\s*(\\d+(?:\\.\\d+)?)`);
+    m = t.match(re); if (m) { out['r' + rpm] = m[1]; t = t.replace(m[0], ' '); }
+  }
+  for (const rpm of ['6', '3']) {
+    const re = new RegExp(`(?:θ|ф|r)\\s?${rpm}(?!\\d)\\s*(?:об\\S*)?\\s*[:=\\-]?\\s*(\\d+(?:\\.\\d+)?)`);
+    m = t.match(re); if (m) { out['r' + rpm] = m[1]; t = t.replace(m[0], ' '); }
+  }
+  const skip = new Set(['g10s', 'g10m', 'r600', 'r300', 'r200', 'r100', 'r6', 'r3']);
+  const cands = [];
+  for (const p of P) { if (skip.has(p.k)) continue; for (const s of p.syn) cands.push({ k: p.k, s }); }
+  cands.sort((a, b) => b.s.replace(/\\./g, '').length - a.s.replace(/\\./g, '').length);
+  for (const c of cands) {
+    if (out[c.k] !== undefined) continue;
+    const short = c.s.replace(/\\./g, '').length <= 2;
+    const sep = short ? '\\s*[:=\\-]\\s*|\\s+(?=\\d)' : '\\s*[:=\\-]?\\s*';
+    const re = new RegExp(`(^|[^a-zа-я0-9])(?:${c.s})(?:${sep})(-?\\d+(?:\\.\\d+)?)`, 'i');
+    const mm = t.match(re);
+    if (mm) { out[c.k] = mm[2]; t = t.replace(mm[0], mm[1] + ' '); }
+  }
+  // правдоподобие: плотность 0.8–3, pH ≤ 14
+  if (out.dens && (num(out.dens) < 0.7 || num(out.dens) > 3)) delete out.dens;
+  if (out.ph && num(out.ph) > 14) delete out.ph;
+  return out;
+}
+
+function mudPaste() {
+  sheet('Из текста или фото', `
+<p class="small">Самый надёжный способ для рукописного листа: сфотографируйте лист встроенной камерой телефона, выделите текст (iPhone — «Сканировать текст» / Live Text, Android — Google Объектив → «Текст»), скопируйте и вставьте сюда. Работает без интернета.</p>
+<textarea id="pt" style="min-height:140px" placeholder="Пл 1,18  УВ 45  ПВ 18  ДНС 92  СНС 10/15  Ф 5,2  К 0,5  pH 9,5  Cl 45000  Ca 200  KCl 5  ТФ 9  МБТ 21"></textarea>
+<div class="btns"><button class="btn sec" id="ptPaste">Вставить из буфера</button><button class="btn" id="ptGo">Распознать</button></div>
+<div class="grp"><div class="gt">Фото → текст в приложении (бета)</div>
+<p class="small muted">Хорошо читает печатный текст и аккуратные цифры, рукописный — хуже. Первый запуск нужно сделать при интернете: модуль (~10 МБ) скачается и дальше будет работать без связи.</p>
+<input type="file" id="ptImg" accept="image/*" capture="environment"><div id="ptStat" class="small muted" style="margin-top:6px"></div></div>
+<div id="ptRes"></div>`, sh => {
+    $('#ptPaste', sh).onclick = async () => { try { $('#pt', sh).value = await navigator.clipboard.readText(); } catch (e) { toast('Нет доступа к буферу — вставьте вручную'); } };
+    const go = () => {
+      const r = parseMud($('#pt', sh).value); const keys = Object.keys(r);
+      if (!keys.length) { $('#ptRes', sh).innerHTML = '<div class="alert warn">Ничего не распознано. Проверьте, что рядом с числами есть подписи (Пл, УВ, ПВ, ДНС, Ф, pH…).</div>'; return; }
+      $('#ptRes', sh).innerHTML = `<div class="res"><div class="small muted">Найдено ${keys.length} параметров</div><div class="kv" style="margin-top:6px">${keys.map(k => `<div><small>${esc(PK[k]?.l || k)}</small><b>${esc(r[k])}</b></div>`).join('')}</div></div><div class="btns"><button class="btn" id="ptUse">Открыть в форме замера</button></div>`;
+      $('#ptUse', sh).onclick = () => mudForm(null, r);
+    };
+    $('#ptGo', sh).onclick = go;
+    $('#ptImg', sh).onchange = async e => {
+      const f = e.target.files[0]; if (!f) return; const st = $('#ptStat', sh);
+      try {
+        st.textContent = 'Загружаю модуль распознавания…';
+        await loadTesseract();
+        st.textContent = 'Распознаю… (10–40 с)';
+        const w = await Tesseract.createWorker(['rus', 'eng'], 1, { langPath: 'https://tessdata.projectnaptha.com/4.0.0', logger: m => { if (m.status === 'recognizing text') st.textContent = 'Распознаю… ' + Math.round(m.progress * 100) + '%'; } });
+        const { data } = await w.recognize(f); await w.terminate();
+        $('#pt', sh).value = data.text; st.textContent = 'Готово. Проверьте текст и нажмите «Распознать».'; go();
+      } catch (err) { st.textContent = 'Не получилось: ' + (navigator.onLine ? (err.message || err) : 'нет интернета для первой загрузки модуля') + '. Используйте камеру телефона и вставку текста.'; }
+    };
+  });
+}
+function loadTesseract() {
+  if (window.Tesseract) return Promise.resolve();
+  return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; s.onload = ok; s.onerror = () => bad(new Error('модуль не загрузился')); document.head.appendChild(s); });
+}
+
+function mudCSV() {
+  const keys = P.map(p => p.k);
+  const rows = [['Дата', 'Время', 'Система', 'Точка', ...P.map(p => p.l + (unitOf(p) ? ', ' + unitOf(p) : '')), 'Масло/вода', 'Изб. извести, кг/м³', 'Обработки', 'Примечание']];
+  for (const r of [...S.mud].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))) {
+    const d = derived(r);
+    rows.push([ruDate(r.date), r.time, r.sys, r.point, ...keys.map(k => r.v?.[k] !== undefined ? String(r.v[k]).replace('.', ',') : ''), d.owr || '', csvNum(d.lime), r.treat || '', r.note || '']);
+  }
+  shareOrDownload(`Журнал раствора ${today()}.csv`, csv(rows), 'text/csv');
+}
+
+function mudBlank() {
+  const rows = [['Пл', 'УВ', 'ПВ'], ['ДНС', 'СНС', 'Ф'], ['К', 'HTHP', 'pH'], ['Pf', 'Mf', 'Pm'], ['Cl', 'Ca', 'Ж'], ['KCl', 'ТФ', 'МБТ'], ['Вода', 'Масло', 'Песок'], ['ЭС', 'Pom', 'Темп'], ['600', '300', '200'], ['100', 'θ6', 'θ3']];
+  const w = window.open('', '_blank');
+  if (!w) { toast('Разрешите всплывающие окна'); return; }
+  const block = n => `<div class="blk"><div class="meta">Замер №${n} &nbsp; Дата ________ &nbsp; Время ______ &nbsp; Забой ______ м &nbsp; РВО / РУО</div>
+<table>${rows.map(r => `<tr>${r.map(c => `<th>${c}</th><td></td>`).join('')}</tr>`).join('')}</table><div class="tr">Обработки:</div></div>`;
+  w.document.write(`<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Бланк замеров</title><style>
+@page{size:A4;margin:10mm} body{font-family:Arial,sans-serif;margin:0;color:#000}
+.blk{height:136mm;border:1.5px solid #000;padding:3mm;margin-bottom:4mm;box-sizing:border-box}
+.meta{font-size:11pt;margin-bottom:2mm} table{border-collapse:collapse;width:100%}
+th{font-size:13pt;text-align:left;padding:0 2mm;width:16mm;border:1px solid #000;background:#f0f0f0} td{border:1px solid #000;height:9.5mm}
+.tr{font-size:11pt;margin-top:2mm;height:16mm;border-bottom:1px solid #999}
+.hint{font-size:8.5pt;color:#444}</style></head><body>${block(1)}${block(2)}
+<div class="hint">Пишите цифры крупно. Для распознавания снимайте один блок целиком. СНС — как «10/15». 600/300… — показания вискозиметра.</div>
+<script>setTimeout(()=>print(),300)<\/script></body></html>`);
+  w.document.close();
+}
+
+/* ───────────── ёмкости ───────────── */
+const TT = { rect: 'Прямоугольная', vcyl: 'Цилиндр вертикальный', hcyl: 'Цилиндр горизонтальный' };
+const TG = ['Активная', 'Резерв', 'Доливная', 'Химбочка', 'Прочее'];
+function tankH(t) { return t.type === 'hcyl' ? num(t.D) : num(t.H); }
+function tankVol(t, levelM) { // объём по уровню от дна, м³
+  if (!has(levelM)) return NaN; const Hm = tankH(t); let h = Math.max(0, levelM); if (has(Hm)) h = Math.min(h, Hm);
+  if (t.type === 'rect') return num(t.L) * num(t.W) * h;
+  if (t.type === 'vcyl') return Math.PI * num(t.D) ** 2 / 4 * h;
+  if (t.type === 'hcyl') { const R = num(t.D) / 2; if (h >= 2 * R) return Math.PI * R * R * num(t.L); const a = R * R * Math.acos((R - h) / R) - (R - h) * Math.sqrt(2 * R * h - h * h); return a * num(t.L); }
+  return NaN;
+}
+const tankFull = t => tankVol(t, tankH(t));
+function levelToM(t, raw) { // показание → уровень от дна, м
+  let x = num(raw); if (!has(x)) return NaN; if (S.settings.levelUnit === 'см') x /= 100;
+  return t.from === 'top' ? tankH(t) - x : x;
+}
+function snapTotals(sn) {
+  let act = 0, all = 0;
+  for (const [tid, raw] of Object.entries(sn.l || {})) { const t = S.tanks.find(x => x.id === tid); if (!t) continue; const v = tankVol(t, levelToM(t, raw)); if (!has(v)) continue; all += v; if (t.grp === 'Активная') act += v; }
+  return { act, all };
+}
+let tankDay = '';
+function renderTanks() {
+  const lu = S.settings.levelUnit;
+  let h = `<div class="btns" style="margin-top:0"><button class="btn" data-act="snapNew" ${S.tanks.length ? '' : 'disabled'}>＋ Замер ёмкостей</button><button class="btn sec" data-act="tankNew">＋ Ёмкость</button></div>`;
+  if (!S.tanks.length) return h + `<div class="card empty">Добавьте ёмкости: название, размеры (длина × ширина × высота в метрах) и как меряете уровень — от дна или недолив от верха.<br><br>Потом раз в смену вносите уровни — приложение посчитает объёмы и разницу.</div>`;
+  const snaps = [...S.snaps].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  const last = snaps[0];
+  h += '<div class="card"><h2>Ёмкости</h2><div class="list">';
+  for (const t of S.tanks) {
+    const lv = last?.l?.[t.id]; const vol = last ? tankVol(t, levelToM(t, lv)) : NaN; const full = tankFull(t);
+    const pct = has(vol) && full ? Math.round(vol / full * 100) : null;
+    h += `<div class="li" data-act="tankEdit" data-id="${t.id}"><div class="main"><div class="t">${esc(t.name)} <span class="pill ${t.grp === 'Активная' ? 'acc' : ''}">${esc(t.grp)}</span></div><div class="s">${esc(TT[t.type])} · ${t.type === 'rect' ? `${fmt(num(t.L))}×${fmt(num(t.W))}×${fmt(num(t.H))} м` : t.type === 'vcyl' ? `Ø${fmt(num(t.D))}×${fmt(num(t.H))} м` : `Ø${fmt(num(t.D))}×${fmt(num(t.L))} м`} · полный ${fmt(full, 1)} м³ · ${t.from === 'top' ? 'недолив' : 'от дна'}</div></div><div class="v">${has(vol) ? fmt(vol, 1) + ' м³' : '—'}${pct !== null ? `<div class="tiny muted">${pct} %</div>` : ''}</div></div>`;
+  }
+  h += '</div>';
+  if (last) { const tt = snapTotals(last); h += `<div class="res"><table><tr><td>Последний замер</td><td>${shortDate(last.date)} ${esc(last.time)}</td></tr><tr><td>Активный объём</td><td>${fmt(tt.act, 1)} м³</td></tr><tr><td>Всего в ёмкостях</td><td>${fmt(tt.all, 1)} м³</td></tr></table></div>`; }
+  h += '</div>';
+  h += `<div class="card"><h2>Калькулятор уровня</h2><div class="grid2">${Sel('tq_t', 'Ёмкость', S.tanks.map(t => [t.id, t.name]), S.tanks[0].id)}${F('tq_l', S.tanks[0].from === 'top' ? 'Недолив' : 'Уровень', '', lu)}</div><div class="res" id="tq_r"><span class="muted small">Введите уровень</span></div></div>`;
+  if (snaps.length) {
+    const days = [...new Set(snaps.map(s => s.date))]; if (!tankDay || !days.includes(tankDay)) tankDay = days[0];
+    const ds = snaps.filter(s => s.date === tankDay).sort((a, b) => a.time.localeCompare(b.time));
+    h += `<div class="card"><h2>Журнал объёмов</h2><div class="chips">${days.slice(0, 20).map(d => `<button class="chip ${d === tankDay ? 'on' : ''}" data-act="tankDay" data-d="${d}">${shortDate(d)}</button>`).join('')}</div>
+<div class="scroll"><table class="tbl" style="margin-top:8px"><tr><th>Ёмкость</th>${ds.map(s => `<th class="n" data-act="snapEdit" data-id="${s.id}" style="text-decoration:underline">${esc(s.time)}</th>`).join('')}</tr>`;
+    for (const t of S.tanks) h += `<tr><td>${esc(t.name)}</td>${ds.map(s => { const v = tankVol(t, levelToM(t, s.l?.[t.id])); return `<td class="n">${has(v) ? fmt(v, 1) : ''}</td>`; }).join('')}</tr>`;
+    const tots = ds.map(snapTotals);
+    h += `<tr><td><b>Активный</b></td>${tots.map(x => `<td class="n"><b>${fmt(x.act, 1)}</b></td>`).join('')}</tr><tr><td><b>Всего</b></td>${tots.map(x => `<td class="n"><b>${fmt(x.all, 1)}</b></td>`).join('')}</tr>`;
+    h += `<tr><td class="muted">Δ к пред.</td>${ds.map(s => { const i = snaps.findIndex(x => x.id === s.id); const prev = snaps[i + 1]; if (!prev) return '<td></td>'; const d = snapTotals(s).all - snapTotals(prev).all; return `<td class="n" style="color:${d < 0 ? 'var(--bad)' : 'var(--ok)'}">${d > 0 ? '+' : ''}${fmt(d, 1)}</td>`; }).join('')}</tr>`;
+    h += `</table></div><div class="note">Нажмите на время, чтобы исправить замер. Δ — изменение общего объёма к предыдущему замеру (поглощение, наработка, сброс, долив).</div><div class="btns"><button class="btn ghost" data-act="tankCSV">Таблица CSV</button></div></div>`;
+  }
+  return h;
+}
+function bindTankCalc() {
+  const s = $('#tq_t'); if (!s) return;
+  const go = () => { const t = S.tanks.find(x => x.id === $('#tq_t').value); const lab = $('#tq_l').closest('label'); lab.firstChild.textContent = t.from === 'top' ? 'Недолив ' : 'Уровень ';
+    const v = tankVol(t, levelToM(t, $('#tq_l').value)); const full = tankFull(t);
+    $('#tq_r').innerHTML = has(v) ? `<div class="big">${fmt(v, 2)} м³</div><div class="small muted">из ${fmt(full, 1)} м³ (${Math.round(v / full * 100)} %), свободно ${fmt(full - v, 1)} м³ · 1 ${S.settings.levelUnit} = ${fmt(tankVol(t, S.settings.levelUnit === 'см' ? 0.01 : 1) , 3)} м³</div>` : '<span class="muted small">Введите уровень</span>'; };
+  s.onchange = go; $('#tq_l').oninput = go;
+}
+function tankForm(t) {
+  const isNew = !t; t = t || { id: uid(), name: 'Ёмкость ' + (S.tanks.length + 1), type: 'rect', L: '', W: '', H: '', D: '', from: 'bottom', grp: 'Активная' };
+  sheet(isNew ? 'Новая ёмкость' : t.name, `
+<label class="f">Название<input id="t_name" value="${esc(t.name)}"></label>
+<div class="grid2" style="margin-top:8px">${Sel('t_type', 'Форма', Object.entries(TT), t.type)}${Sel('t_grp', 'Группа', TG, t.grp)}</div>
+<div class="grid3" style="margin-top:8px" id="t_dims"></div>
+${Sel('t_from', 'Как меряете уровень', [['bottom', 'Уровень от дна'], ['top', 'Недолив (от верха до раствора)']], t.from)}
+<div class="res" id="t_res"></div>
+<div class="btns">${isNew ? '' : '<button class="btn danger" id="t_del">Удалить</button>'}<button class="btn" id="t_save">Сохранить</button></div>`, sh => {
+    const dims = () => { const ty = $('#t_type', sh).value; const cur = { L: $('#t_L', sh)?.value ?? t.L, W: $('#t_W', sh)?.value ?? t.W, H: $('#t_H', sh)?.value ?? t.H, D: $('#t_D', sh)?.value ?? t.D };
+      $('#t_dims', sh).innerHTML = ty === 'rect' ? F('t_L', 'Длина', cur.L, 'м') + F('t_W', 'Ширина', cur.W, 'м') + F('t_H', 'Высота', cur.H, 'м') : ty === 'vcyl' ? F('t_D', 'Диаметр', cur.D, 'м') + F('t_H', 'Высота', cur.H, 'м') : F('t_D', 'Диаметр', cur.D, 'м') + F('t_L', 'Длина', cur.L, 'м'); calc(); };
+    const read = () => ({ ...t, name: T('t_name', sh), type: $('#t_type', sh).value, grp: $('#t_grp', sh).value, from: $('#t_from', sh).value, L: T('t_L', sh), W: T('t_W', sh), H: T('t_H', sh), D: T('t_D', sh) });
+    const calc = () => { const x = read(); const full = tankFull(x); $('#t_res', sh).innerHTML = has(full) && full > 0 ? `Полный объём <b>${fmt(full, 2)} м³</b>${x.type !== 'hcyl' ? ` · 1 см = ${fmt(tankVol(x, 0.01), 3)} м³` : ''}` : '<span class="small muted">Введите размеры</span>'; };
+    $('#t_type', sh).onchange = dims; sh.addEventListener('input', calc); dims();
+    $('#t_save', sh).onclick = () => { const x = read(); if (!has(tankFull(x)) || tankFull(x) <= 0) { toast('Проверьте размеры'); return; } Object.assign(t, x); if (isNew) S.tanks.push(t); save(); closeSheet(); render(); };
+    if (!isNew) $('#t_del', sh).onclick = () => confirmBox(`Удалить ёмкость «${t.name}»? Замеры по ней тоже перестанут учитываться.`, () => { S.tanks = S.tanks.filter(x => x.id !== t.id); save(); render(); });
+  });
+}
+function snapForm(sn) {
+  const isNew = !sn; sn = sn || { id: uid(), date: today(), time: nowTime(), l: {}, note: '' };
+  const lu = S.settings.levelUnit;
+  sheet(isNew ? 'Замер ёмкостей' : 'Замер ' + shortDate(sn.date) + ' ' + sn.time, `
+<div class="grid2">${F('s_date', 'Дата', sn.date, '', 'type="date" inputmode="none"')}${F('s_time', 'Время', sn.time, '', 'type="time" inputmode="none"')}</div>
+<div class="list" style="margin-top:6px">${S.tanks.map(t => `<div class="li"><div class="main"><div class="t">${esc(t.name)}</div><div class="s">${t.from === 'top' ? 'недолив' : 'от дна'}, ${lu} · полный ${fmt(tankFull(t), 1)} м³</div></div><input id="s_${t.id}" data-t="${t.id}" value="${esc(sn.l[t.id] ?? '')}" inputmode="decimal" style="width:90px;flex:none"><div class="v" id="sv_${t.id}" style="width:70px">—</div></div>`).join('')}</div>
+<div class="res" id="s_tot"></div>
+<label class="f" style="margin-top:8px">Примечание<input id="s_note" value="${esc(sn.note || '')}" placeholder="долив, сброс, поглощение…"></label>
+<div class="btns">${isNew ? '' : '<button class="btn danger" id="s_del">Удалить</button>'}<button class="btn" id="s_save">Сохранить</button></div>`, sh => {
+    const calc = () => { const tmp = { l: {} }; for (const t of S.tanks) { const raw = $('#s_' + t.id, sh).value; tmp.l[t.id] = raw; const v = tankVol(t, levelToM(t, raw)); $('#sv_' + t.id, sh).textContent = has(v) ? fmt(v, 1) + ' м³' : '—'; } const tt = snapTotals(tmp); $('#s_tot', sh).innerHTML = `<table><tr><td>Активный объём</td><td>${fmt(tt.act, 1)} м³</td></tr><tr><td>Всего</td><td>${fmt(tt.all, 1)} м³</td></tr></table>`; };
+    sh.addEventListener('input', calc); calc();
+    $('#s_save', sh).onclick = () => { sn.date = $('#s_date', sh).value || today(); sn.time = $('#s_time', sh).value || nowTime(); sn.l = {}; for (const t of S.tanks) { const raw = $('#s_' + t.id, sh).value.trim(); if (raw !== '') sn.l[t.id] = raw.replace(',', '.'); } sn.note = T('s_note', sh); if (isNew) S.snaps.push(sn); tankDay = sn.date; save(); closeSheet(); toast('Замер сохранён'); render(); };
+    if (!isNew) $('#s_del', sh).onclick = () => confirmBox('Удалить этот замер ёмкостей?', () => { S.snaps = S.snaps.filter(x => x.id !== sn.id); save(); render(); });
+  });
+}
+function tankCSV() {
+  const rows = [['Дата', 'Время', ...S.tanks.map(t => t.name + ', уровень ' + S.settings.levelUnit), ...S.tanks.map(t => t.name + ', м³'), 'Активный, м³', 'Всего, м³', 'Примечание']];
+  for (const s of [...S.snaps].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))) { const tt = snapTotals(s); rows.push([ruDate(s.date), s.time, ...S.tanks.map(t => (s.l[t.id] ?? '').replace('.', ',')), ...S.tanks.map(t => csvNum(tankVol(t, levelToM(t, s.l[t.id])))), csvNum(tt.act), csvNum(tt.all), s.note || '']); }
+  shareOrDownload(`Объёмы ёмкостей ${today()}.csv`, csv(rows), 'text/csv');
+}
+
+/* ───────────── калькуляторы ───────────── */
+// Плотность водных растворов при 20 °C, % масс → г/см³ (справочник CRC Handbook)
+const BRINE = {
+  kcl: { name: 'KCl', max: 24, M: 74.55, cl: 35.45 / 74.55, kfrac: 39.10 / 74.55,
+    t: [[0, .9982], [1, 1.0046], [2, 1.0110], [3, 1.0174], [4, 1.0239], [5, 1.0304], [6, 1.0369], [7, 1.0434], [8, 1.0500], [9, 1.0566], [10, 1.0633], [12, 1.0768], [14, 1.0905], [16, 1.1043], [18, 1.1185], [20, 1.1328], [22, 1.1474], [24, 1.1623]] },
+  cacl2: { name: 'CaCl₂', max: 40, M: 110.98, cl: 70.90 / 110.98,
+    t: [[0, .9982], [1, 1.0070], [2, 1.0148], [4, 1.0316], [6, 1.0486], [8, 1.0659], [10, 1.0835], [12, 1.1015], [14, 1.1198], [16, 1.1386], [18, 1.1578], [20, 1.1775], [22, 1.1976], [24, 1.2183], [26, 1.2394], [28, 1.2610], [30, 1.2831], [32, 1.3057], [34, 1.3289], [36, 1.3527], [38, 1.3772], [40, 1.4023]] },
+};
+function brineRho(salt, w) { const t = BRINE[salt].t; if (w <= 0) return t[0][1]; for (let i = 1; i < t.length; i++) if (w <= t[i][0]) { const [x0, y0] = t[i - 1], [x1, y1] = t[i]; return y0 + (y1 - y0) * (w - x0) / (x1 - x0); } return NaN; }
+function brineW(salt, rho) { const t = BRINE[salt].t; for (let i = 1; i < t.length; i++) if (rho <= t[i][1]) { const [x0, y0] = t[i - 1], [x1, y1] = t[i]; return x0 + (x1 - x0) * (rho - y0) / (y1 - y0); } return NaN; }
+function brineWfromCl(salt, clmg) { let lo = 0, hi = BRINE[salt].max; for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2; const c = m / 100 * brineRho(salt, m) * 1e6 * BRINE[salt].cl; if (c < clmg) lo = m; else hi = m; } return (lo + hi) / 2; }
+const RHO = () => S.settings.rho;
+function packs(kg, pack) { return has(kg) && pack > 0 ? Math.ceil(kg / pack - 1e-9) : NaN; }
+const resT = rows => `<div class="res"><table>${rows.filter(Boolean).map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('')}</table></div>`;
+const warnR = t => `<div class="alert warn small" style="margin-top:10px">${t}</div>`;
+const waitR = '<div class="res small muted">Заполните поля</div>';
+
+const CALCS = [
+ { id: 'conc', ic: '⚖', t: 'Мешки и концентрация', s: 'сколько мешков на объём и обратно',
+   html: () => `<div class="seg" data-seg="cm"><button class="on" data-v="a">Нужно мешков</button><button data-v="b">Какая концентрация</button></div>
+<div class="grid2">${F('c_v', 'Объём раствора', '', 'м³')}${F('c_c', 'Концентрация', '', 'кг/м³ (л/м³)')}${F('c_n', 'Ввели упаковок', '', 'шт')}${F('c_p', 'Масса/объём упаковки', '25', 'кг (л)')}</div>
+<div class="chips" style="margin-top:8px">${[25, 22.7, 20, 50, 190, 208, 900, 1000].map(x => `<button class="chip" data-pk="${x}">${x}</button>`).join('')}</div><div id="c_r"></div>`,
+   calc: r => { const mode = $('[data-seg="cm"] .on', r).dataset.v; $('#c_c', r).closest('label').style.display = mode === 'a' ? '' : 'none'; $('#c_n', r).closest('label').style.display = mode === 'b' ? '' : 'none';
+     const Vv = V('c_v', r), C = V('c_c', r), N = V('c_n', r), Pk = V('c_p', r);
+     if (mode === 'a') { if (!has(Vv) || !has(C)) return waitR; const kg = Vv * C; return resT([['Нужно реагента', `${fmt(kg, 1)} кг (л)`], ['Упаковок', `<span class="big">${fmt(kg / Pk, 1)}</span> → ${packs(kg, Pk)} шт`]]); }
+     if (!has(Vv) || !has(N)) return waitR; const kg = N * Pk; return resT([['Введено', `${fmt(kg, 1)} кг (л)`], ['Концентрация', `<span class="big">${fmt(kg / Vv, 2)}</span> кг/м³`]]); } },
+ { id: 'wt', ic: '⬆', t: 'Утяжеление', s: 'барит 4,2 · мел 2,7 г/см³',
+   html: () => `<div class="seg" data-seg="wm"><button class="on" data-v="a">Объём растёт</button><button data-v="b">Конечный объём задан</button></div>
+<div class="grid2">${Sel('w_m', 'Утяжелитель', [['barite', `Барит ${RHO().barite}`], ['chalk', `Мел (CaCO₃) ${RHO().chalk}`], ['own', 'Свой']], 'barite')}${F('w_rm', 'Плотность утяжелителя', RHO().barite, 'г/см³')}
+${F('w_v', 'Объём раствора', '', 'м³')}${F('w_r1', 'Плотность сейчас', '', 'г/см³')}${F('w_r2', 'Нужная плотность', '', 'г/см³')}${F('w_p', 'Упаковка', '1000', 'кг')}</div><div id="w_r"></div>`,
+   calc: r => { const sel = $('#w_m', r).value; if (sel !== 'own' && r._last !== sel) { $('#w_rm', r).value = RHO()[sel]; } r._last = sel;
+     const mode = $('[data-seg="wm"] .on', r).dataset.v; $('#w_v', r).closest('label').firstChild.textContent = mode === 'a' ? 'Объём раствора ' : 'Нужный конечный объём ';
+     const rm = V('w_rm', r), Vv = V('w_v', r), r1 = V('w_r1', r), r2 = V('w_r2', r), pk = V('w_p', r);
+     if (![rm, Vv, r1, r2].every(has)) return waitR; if (r2 <= r1) return warnR('Нужная плотность должна быть больше текущей. Для снижения — калькулятор «Снижение плотности».'); if (r2 >= rm) return warnR('Нужная плотность не может быть выше плотности утяжелителя.');
+     if (mode === 'a') { const m = Vv * rm * (r2 - r1) / (rm - r2); const dv = m / rm; return resT([['Утяжелителя', `<span class="big">${fmt(m, 2)}</span> т`], ['Упаковок', `${fmt(m * 1000 / pk, 1)} → ${packs(m * 1000, pk)} шт`], ['На 1 м³', `${fmt(m * 1000 / Vv, 0)} кг/м³`], ['Прирост объёма', `+${fmt(dv, 2)} м³`], ['Объём после', `${fmt(Vv + dv, 2)} м³`]]); }
+     const v0 = Vv * (rm - r2) / (rm - r1); const m = (Vv - v0) * rm; return resT([['Оставить раствора', `<span class="big">${fmt(v0, 2)}</span> м³`], ['Слить заранее', `${fmt(Math.max(0, Vv - v0), 2)} м³ (если сейчас ${fmt(Vv, 1)} м³)`], ['Утяжелителя', `${fmt(m, 2)} т → ${packs(m * 1000, pk)} уп.`]]); } },
+ { id: 'dil', ic: '⬇', t: 'Снижение плотности', s: 'разбавление водой 1,0 · нефтью 0,86',
+   html: () => `<div class="grid2">${Sel('d_m', 'Чем разбавляем', [['water', `Вода ${RHO().water}`], ['oil', `Нефть / УВ-основа ${RHO().oil}`], ['own', 'Своя жидкость']], 'water')}${F('d_ra', 'Плотность жидкости', RHO().water, 'г/см³')}
+${F('d_v', 'Объём раствора', '', 'м³')}${F('d_r1', 'Плотность сейчас', '', 'г/см³')}${F('d_r2', 'Нужная плотность', '', 'г/см³')}</div><div id="d_r"></div>`,
+   calc: r => { const sel = $('#d_m', r).value; if (sel !== 'own' && r._last !== sel) $('#d_ra', r).value = RHO()[sel]; r._last = sel;
+     const ra = V('d_ra', r), Vv = V('d_v', r), r1 = V('d_r1', r), r2 = V('d_r2', r);
+     if (![ra, Vv, r1, r2].every(has)) return waitR; if (r2 >= r1) return warnR('Нужная плотность должна быть меньше текущей.'); if (r2 <= ra) return warnR('Нельзя получить плотность ниже плотности разбавителя.');
+     const va = Vv * (r1 - r2) / (r2 - ra); return resT([['Добавить', `<span class="big">${fmt(va, 2)}</span> м³`], ['Объём после', `${fmt(Vv + va, 2)} м³`], ['Доля разбавителя', `${fmt(va / (Vv + va) * 100, 1)} %`]]) + `<div class="note">Разбавление снижает и концентрации всех реагентов в той же пропорции — их надо восполнить.</div>`; } },
+ { id: 'mix', ic: '⇄', t: 'Смешивание двух жидкостей', s: 'плотность смеси или сколько добавить',
+   html: () => `<div class="seg" data-seg="xm"><button class="on" data-v="a">Плотность смеси</button><button data-v="b">Сколько добавить</button></div>
+<div class="grid2">${F('x_v1', 'Объём 1', '', 'м³')}${F('x_r1', 'Плотность 1', '', 'г/см³')}${F('x_v2', 'Объём 2', '', 'м³')}${F('x_r2', 'Плотность 2', '', 'г/см³')}${F('x_rt', 'Нужная плотность', '', 'г/см³')}</div>
+<div class="chips" style="margin-top:8px"><button class="chip" data-fill="x_r2" data-val="${RHO().water}">вода ${RHO().water}</button><button class="chip" data-fill="x_r2" data-val="${RHO().oil}">нефть ${RHO().oil}</button></div><div id="x_r"></div>`,
+   calc: r => { const mode = $('[data-seg="xm"] .on', r).dataset.v; $('#x_v2', r).closest('label').style.display = mode === 'a' ? '' : 'none'; $('#x_rt', r).closest('label').style.display = mode === 'b' ? '' : 'none';
+     const v1 = V('x_v1', r), r1 = V('x_r1', r), v2 = V('x_v2', r), r2 = V('x_r2', r), rt = V('x_rt', r);
+     if (mode === 'a') { if (![v1, r1, v2, r2].every(has)) return waitR; const rm = (v1 * r1 + v2 * r2) / (v1 + v2); return resT([['Плотность смеси', `<span class="big">${fmt(rm, 3)}</span> г/см³`], ['Объём смеси', `${fmt(v1 + v2, 2)} м³`]]); }
+     if (![v1, r1, r2, rt].every(has)) return waitR; if ((rt - r1) * (r2 - rt) <= 0) return warnR('Нужная плотность должна лежать между плотностями двух жидкостей.');
+     const x = v1 * (rt - r1) / (r2 - rt); return resT([['Добавить жидкости 2', `<span class="big">${fmt(x, 2)}</span> м³`], ['Объём смеси', `${fmt(v1 + x, 2)} м³`]]); } },
+ { id: 'brine', ic: '🧂', t: 'Рассол KCl / CaCl₂', s: 'приготовление и доведение концентрации',
+   html: () => `<div class="seg" data-seg="bm"><button class="on" data-v="a">Приготовить рассол</button><button data-v="b">Довести концентрацию</button></div>
+<div class="grid2">${Sel('b_s', 'Соль', [['kcl', 'KCl (калий хлористый)'], ['cacl2', 'CaCl₂ (кальций хлористый)']], 'kcl')}${F('b_pu', 'Содержание соли в товаре', S.settings.purity.kcl, '%')}
+${F('b_v', 'Объём рассола', '', 'м³')}${F('b_w', 'Нужная концентрация', '', '% масс')}${F('b_rt', '…или нужная плотность', '', 'г/см³')}${F('b_w1', 'Сейчас концентрация', '', '% масс')}${F('b_cl1', '…или сейчас Cl⁻', '', 'мг/л')}${F('b_p', 'Упаковка', '1000', 'кг')}</div><div id="b_r"></div>`,
+   calc: r => { const salt = $('#b_s', r).value; if (r._last !== salt) { $('#b_pu', r).value = S.settings.purity[salt]; } r._last = salt; const B = BRINE[salt];
+     const mode = $('[data-seg="bm"] .on', r).dataset.v; ['b_w1', 'b_cl1'].forEach(i => $('#' + i, r).closest('label').style.display = mode === 'b' ? '' : 'none');
+     $('#b_v', r).closest('label').firstChild.textContent = mode === 'a' ? 'Объём рассола ' : 'Объём водной фазы сейчас ';
+     const pu = V('b_pu', r) / 100, Vv = V('b_v', r), pk = V('b_p', r); let w2 = V('b_w', r); const rt = V('b_rt', r);
+     if (!has(w2) && has(rt)) w2 = brineW(salt, rt);
+     if (!has(w2) || !has(Vv) || !has(pu)) return waitR + `<div class="note">Справочно: плотность сухой соли (ПБ) — ${salt === 'kcl' ? 'KCl 1,98–1,99' : 'CaCl₂ 2,16'} г/см³; товар: ${salt === 'kcl' ? 'KCl ≥ 95 %' : 'CaCl₂ 90–96,5 %'}.</div>`;
+     if (w2 > B.max) return warnR(`Для ${B.name} таблица до ${B.max} % (≈ ${fmt(brineRho(salt, B.max), 3)} г/см³) при 20 °C.`);
+     const r2 = brineRho(salt, w2);
+     const ions = w => { const rr = brineRho(salt, w); const g = w / 100 * rr * 1000; return [['Cl⁻', fmt(g * 1000 * B.cl, 0) + ' мг/л'], salt === 'kcl' ? ['K⁺', fmt(g * 1000 * B.kfrac, 0) + ' мг/л'] : null]; };
+     if (mode === 'a') {
+       const mTot = Vv * r2 * 1000, salt100 = mTot * w2 / 100, comm = salt100 / pu, water = (mTot - comm) / 1000 / RHO().water;
+       return resT([['Плотность рассола', `<span class="big">${fmt(r2, 3)}</span> г/см³`], ['Соли (товар)', `${fmt(comm, 0)} кг → ${packs(comm, pk)} уп.`], ['Чистой соли', `${fmt(salt100, 0)} кг (${fmt(salt100 / Vv, 0)} кг/м³ рассола)`], ['Воды', `${fmt(water, 2)} м³`], ['Соли на 1 м³ воды', `${fmt(comm / (water || NaN), 0)} кг`], ...ions(w2)]) + `<div class="note">Таблица плотностей — 20 °C. Примеси товарной соли условно считаются растворёнными. CaCl₂ растворяется с сильным нагревом — дать остыть.</div>`;
+     }
+     let w1 = V('b_w1', r); const cl1 = V('b_cl1', r); if (!has(w1) && has(cl1)) w1 = brineWfromCl(salt, cl1); if (!has(w1)) return waitR; if (w1 >= w2) return warnR('Текущая концентрация уже не ниже нужной.');
+     const r1 = brineRho(salt, w1), mw = Vv * r1 * 1000 * (1 - w1 / 100); const add = mw * (w2 / (100 - w2) - w1 / (100 - w1)); const comm = add / pu; const vnew = mw / (1 - w2 / 100) / r2 / 1000;
+     return resT([['Сейчас', `${fmt(w1, 2)} % (ρ ${fmt(r1, 3)})`], ['Добавить соли (товар)', `<span class="big">${fmt(comm, 0)}</span> кг → ${packs(comm, pk)} уп.`], ['Станет', `${fmt(w2, 2)} % (ρ ${fmt(r2, 3)})`], ['Объём водной фазы после', `${fmt(vnew, 2)} м³`], ...ions(w2)]) + `<div class="note">Считается на водную фазу (рассол). Для раствора с твёрдой фазой объём водной фазы = объём раствора × доля воды по реторте.</div>`; } },
+ { id: 'treat', ic: '🧪', t: 'Обработка загрязнений', s: 'коэффициенты курса (Fw — доля воды)',
+   html: () => `<div class="grid2">${Sel('tr_k', 'Загрязнение → реагент', TREAT.map((x, i) => [i, x[0]]), 0)}${F('tr_c', 'Концентрация загрязнителя', '', 'мг/л')}${F('tr_fw', 'Вода по реторте', '', '%')}${F('tr_v', 'Объём раствора', '', 'м³')}${F('tr_p', 'Упаковка', '25', 'кг')}</div><div id="tr_r"></div>`,
+   calc: r => { const x = TREAT[+$('#tr_k', r).value]; const byLime = x[2] === 'lime'; $('#tr_c', r).closest('label').firstChild.textContent = byLime ? 'Избыток извести ' : 'Концентрация загрязнителя '; $('#tr_c', r).closest('label').querySelector('.u').textContent = byLime ? 'кг/м³' : 'мг/л'; $('#tr_fw', r).closest('label').style.display = byLime ? 'none' : '';
+     const c = V('tr_c', r), fw = V('tr_fw', r) / 100, Vv = V('tr_v', r), pk = V('tr_p', r);
+     if (!has(c) || (!byLime && !has(fw))) return waitR; const kgm3 = byLime ? c * x[1] : c * fw * x[1];
+     return resT([['Дозировка', `<span class="big">${fmt(kgm3, 2)}</span> кг/м³`], has(Vv) ? ['На объём', `${fmt(kgm3 * Vv, 0)} кг → ${packs(kgm3 * Vv, pk)} уп.`] : null]) + `<div class="note">${x[3] || ''} Сначала пилот на 350 мл.</div>`; } },
+ { id: 'pfmf', ic: '⚗', t: 'Pf / Mf → ионы', s: 'OH⁻, CO₃²⁻, HCO₃⁻ и вывод',
+   html: () => `<div class="grid2">${F('pm_pf', 'Pf', '', 'мл')}${F('pm_mf', 'Mf', '', 'мл')}</div><div id="pm_r"></div>`,
+   calc: r => { const pf = V('pm_pf', r), mf = V('pm_mf', r); if (!has(pf) || !has(mf)) return waitR; let oh = 0, co3 = 0, hco3 = 0, v;
+     if (pf === 0 && mf === 0) { v = 'щёлочности нет'; }
+     else if (pf === 0) { hco3 = 1220 * mf; v = 'бикарбонатное загрязнение'; }
+     else if (Math.abs(pf - mf) < 0.02) { oh = 340 * pf; v = 'загрязнения нет'; }
+     else if (Math.abs(2 * pf - mf) < 0.05) { co3 = 1200 * pf; v = 'карбонатное загрязнение'; }
+     else if (2 * pf > mf) { oh = (2 * pf - mf) * 340; co3 = (mf - pf) * 1200; v = 'нет / незначительное'; }
+     else { co3 = 1200 * pf; hco3 = (mf - 2 * pf) * 1220; v = 'смешанное (карбонаты + бикарбонаты)'; }
+     return resT([['Вывод', `<b>${v}</b>`], ['OH⁻', fmt(oh, 0) + ' мг/л'], ['CO₃²⁻', fmt(co3, 0) + ' мг/л'], ['HCO₃⁻', fmt(hco3, 0) + ' мг/л']]) + `<div class="note">Метод курса, титрование 0,02 N H₂SO₄. Количество извести — в «Обработке загрязнений».</div>`; } },
+ { id: 'lime', ic: '◎', t: 'Избыток извести', s: 'РВО по Pm/Pf, РУО по Pom',
+   html: () => `<div class="seg" data-seg="lm"><button class="on" data-v="a">РВО</button><button data-v="b">РУО</button></div><div class="grid3">${F('l_pm', 'Pm', '', 'мл')}${F('l_pf', 'Pf', '', 'мл')}${F('l_fw', 'Вода', '', '%')}${F('l_pom', 'Pom', '', 'мл')}</div><div id="l_r"></div>`,
+   calc: r => { const m = $('[data-seg="lm"] .on', r).dataset.v; ['l_pm', 'l_pf', 'l_fw'].forEach(i => $('#' + i, r).closest('label').style.display = m === 'a' ? '' : 'none'); $('#l_pom', r).closest('label').style.display = m === 'b' ? '' : 'none';
+     if (m === 'a') { const pm = V('l_pm', r), pf = V('l_pf', r), fw = V('l_fw', r) / 100; if (![pm, pf, fw].every(has)) return waitR; return resT([['Избыток извести', `<span class="big">${fmt(0.742 * (pm - pf * fw), 2)}</span> кг/м³`]]) + '<div class="note">0,742 × (Pm − Pf × Fw)</div>'; }
+     const pom = V('l_pom', r); if (!has(pom)) return waitR; return resT([['Избыток извести', `<span class="big">${fmt(3.69 * pom, 2)}</span> кг/м³`]]) + '<div class="note">3,69 × Pom. Рабочий диапазон РУО по курсу 10–20 кг/м³, всегда избыток.</div>'; } },
+];
+const TREAT = [
+  ['Ca²⁺ (гипс, ангидрит) → сода', 0.00265, 'fw', 'мг/л Ca²⁺ × Fw × 0,00265.'],
+  ['Ca²⁺ → бикарбонат натрия', 0.002097, 'fw', 'мг/л Ca²⁺ × Fw × 0,002097. Без роста pH.'],
+  ['Ca²⁺ → фосфорнокислый натрий (SAPP)', 0.00277, 'fw', 'Не в Ca-системах при t > 80 °C.'],
+  ['CO₃²⁻ → известь или гипс', 0.00285, 'fw', 'Известь поднимает pH, гипс — нет.'],
+  ['HCO₃⁻ → известь', 0.00121, 'fw', 'мг/л HCO₃⁻ × Fw × 0,00121.'],
+  ['Ca²⁺/Mg²⁺ минерализованной воды → каустик', 0.00285, 'fw', 'Mg(OH)₂ выпадает при pH > 10,5 — учесть рост вязкости.'],
+  ['H₂S (S²⁻) → оксид цинка', 0.002596, 'fw', 'Плюс каустик до pH > 10,5.'],
+  ['Цемент (изб. извести) → бикарбонат', 3.23, 'lime', 'Избыток извести × 3,23. По ИП: 2 части бикарбоната на 1,1 части цемента.'],
+  ['Цемент (изб. извести) → лимонная кислота', 5.4, 'lime', 'Избыток извести × 5,4. Снижает pH.'],
+  ['Цемент (изб. извести) → SAPP', 3.281, 'lime', 'Избыток извести × 3,281.'],
+];
+
+function renderCalc() {
+  return CALCS.map(c => `<details class="calc" data-calc="${c.id}"><summary><span class="ic">${c.ic}</span><span>${esc(c.t)}<small>${esc(c.s)}</small></span></summary><div class="body">${c.html()}</div></details>`).join('') +
+    `<div class="card small muted">Плотности по умолчанию: барит ${RHO().barite}, мел ${RHO().chalk}, нефть ${RHO().oil}, вода ${RHO().water} г/см³ — меняются в настройках (⚙). Таблицы рассолов — справочник CRC, 20 °C.</div>`;
+}
+function bindCalc() {
+  for (const c of CALCS) {
+    const d = $(`[data-calc="${c.id}"]`); if (!d) continue; const body = $('.body', d); const out = body.lastElementChild;
+    const run = () => { try { out.innerHTML = c.calc(body); } catch (e) { out.innerHTML = warnR('Ошибка расчёта: ' + esc(e.message)); } };
+    body.addEventListener('input', run); body.addEventListener('change', run);
+    body.addEventListener('click', e => {
+      const sb = e.target.closest('.seg button'); if (sb) { $$('button', sb.parentElement).forEach(b => b.classList.toggle('on', b === sb)); run(); }
+      const pk = e.target.closest('[data-pk]'); if (pk) { const inp = $('input[id$="_p"]', body); if (inp) inp.value = pk.dataset.pk; run(); }
+      const fl = e.target.closest('[data-fill]'); if (fl) { $('#' + fl.dataset.fill, body).value = fl.dataset.val; run(); }
+    });
+    run();
+  }
+}
+
+/* ───────────── склад ───────────── */
+const CATN = { ph: 'pH и жёсткость', salt: 'Соли', visc: 'Структурообразователи', fl: 'Понизители фильтрации', inh: 'Ингибиторы', obm: 'РУО', lub: 'Смазки и ПАВ', wt: 'Утяжелители', lcm: 'Кольматанты', spec: 'Прочее', own: 'Добавленные' };
+const MT = { in: 'Приход', out: 'Расход', off: 'Списание', adj: 'Инвентаризация' };
+const itemName = it => it ? it.name + (it.grade ? ' ' + it.grade : '') : '?';
+const itemById = id => S.items.find(x => x.id === id);
+function bal(itemId, batchId) {
+  let s = 0; for (const m of S.moves) { if (m.item !== itemId) continue; if (batchId !== undefined && (m.batch || '') !== batchId) continue; const q = num(m.qty); if (!has(q)) continue; s += m.type === 'in' ? q : m.type === 'adj' ? q : -q; } return s;
+}
+function balEx(itemId, batchId, exId) { const keep = S.moves; S.moves = keep.filter(x => x.id !== exId); try { return batchId ? bal(itemId, batchId) : bal(itemId); } finally { S.moves = keep; } }
+function batchesOf(itemId) { return S.batches.filter(b => b.item === itemId).map(b => ({ ...b, bal: bal(itemId, b.id) })); }
+function nearestExp(itemId) { const bs = batchesOf(itemId).filter(b => b.bal > 1e-6 && b.exp); bs.sort((a, b) => a.exp.localeCompare(b.exp)); return bs[0]?.exp || ''; }
+function expPill(iso) { if (!iso) return ''; const d = daysTo(iso); const w = S.settings.warnDays; return `<span class="pill ${d < 0 ? 'bad' : d <= w ? 'warn' : 'ok'}">${d < 0 ? 'истёк ' : 'до '}${ruDate(iso)}</span>`; }
+const packStr = (it, q) => has(q) && it.pack > 0 ? `${fmt(q / it.pack, 1)} ${it.packName || 'уп.'}` : '';
+function allDocs() {
+  const out = [];
+  for (const it of S.items) (it.docs || []).forEach((d, i) => out.push({ ...d, name: itemName(it), item: it.id, idx: i, src: 'item' }));
+  for (const d of S.docs) out.push({ ...d, src: 'gen' });
+  return out;
+}
+function alerts() {
+  const w = S.settings.warnDays, out = [];
+  for (const b of S.batches) { const q = bal(b.item, b.id); if (q <= 1e-6 || !b.exp) continue; const d = daysTo(b.exp); if (d <= w) out.push({ lvl: d < 0 ? 'bad' : 'warn', t: `${itemName(itemById(b.item))}, партия ${b.no || '—'}`, s: `${d < 0 ? 'Срок истёк' : 'Срок годности'} ${ruDate(b.exp)} · остаток ${fmt(q, 0)} ${itemById(b.item)?.unit || ''}`, act: 'itemOpen', id: b.item }); }
+  for (const d of allDocs()) { if (!d.until) continue; if (d.src === 'item') { const it = itemById(d.item); if (bal(it.id) <= 1e-6) continue; } const dd = daysTo(d.until); if (dd <= w) out.push({ lvl: dd < 0 ? 'bad' : 'warn', t: `${d.type}: ${d.name}`, s: `${dd < 0 ? 'Истёк' : 'Действует до'} ${ruDate(d.until)}`, act: d.src === 'item' ? 'itemOpen' : 'docEdit', id: d.src === 'item' ? d.item : d.id }); }
+  for (const it of S.items) { const m = num(it.min); if (has(m) && m > 0) { const q = bal(it.id); if (q < m) out.push({ lvl: 'info', t: `Мало: ${itemName(it)}`, s: `Остаток ${fmt(q, 0)} ${it.unit} при минимуме ${fmt(m, 0)}`, act: 'itemOpen', id: it.id }); } }
+  return out.sort((a, b) => ({ bad: 0, warn: 1, info: 2 }[a.lvl] - { bad: 0, warn: 1, info: 2 }[b.lvl]));
+}
+let stockView = 'bal', stockQ = '', stockOnly = true;
+function renderStock() {
+  let h = `<div class="btns" style="margin-top:0"><button class="btn" data-act="moveNew">＋ Приход / расход</button></div>
+<div class="seg" style="margin-top:10px">${[['bal', 'Остатки'], ['exp', 'Сроки'], ['mov', 'Движение'], ['doc', 'Документы']].map(([k, t]) => `<button class="${stockView === k ? 'on' : ''}" data-act="stockView" data-v="${k}">${t}</button>`).join('')}</div>`;
+  if (stockView === 'bal') {
+    h += `<div class="card"><div class="row"><input id="st_q" placeholder="Поиск реагента" value="${esc(stockQ)}"><button class="chip ${stockOnly ? 'on' : ''}" data-act="stockOnly" style="flex:none">С остатком</button></div><div class="list" id="st_list" style="margin-top:6px"></div></div>
+<div class="btns"><button class="btn ghost" data-act="itemNew">＋ Реагент</button><button class="btn ghost" data-act="stockCSV">Остатки CSV</button></div>`;
+  } else if (stockView === 'exp') {
+    const bs = S.batches.map(b => ({ ...b, q: bal(b.item, b.id) })).filter(b => b.q > 1e-6).sort((a, b) => (a.exp || '9999').localeCompare(b.exp || '9999'));
+    h += `<div class="card"><h2>Партии на складе</h2>${bs.length ? '<div class="list">' + bs.map(b => { const it = itemById(b.item); return `<div class="li" data-act="itemOpen" data-id="${b.item}"><div class="main"><div class="t">${esc(itemName(it))}</div><div class="s">Партия ${esc(b.no || '—')}${b.made ? ' · изг. ' + ruDate(b.made) : ''} · ${fmt(b.q, 0)} ${esc(it?.unit)} ${packStr(it, b.q) ? '(' + packStr(it, b.q) + ')' : ''}</div></div><div class="v">${b.exp ? expPill(b.exp) : '<span class="pill">срок не указан</span>'}</div></div>`; }).join('') + '</div>' : '<div class="empty">Партий с остатком пока нет. Партия создаётся при оформлении прихода.</div>'}</div>`;
+  } else if (stockView === 'mov') {
+    const ms = [...S.moves].sort((a, b) => (b.date + b.ts).localeCompare(a.date + a.ts)).slice(0, 200);
+    h += `<div class="card"><h2>Движение</h2>${ms.length ? '<div class="list">' + ms.map(m => { const it = itemById(m.item); const b = S.batches.find(x => x.id === m.batch); const q = num(m.qty); const sign = m.type === 'in' ? '+' : m.type === 'adj' ? (q >= 0 ? '+' : '') : '−'; return `<div class="li" data-act="moveEdit" data-id="${m.id}"><div class="main"><div class="t">${esc(itemName(it))}</div><div class="s">${ruDate(m.date)} · ${MT[m.type]}${b ? ' · п. ' + esc(b.no || '—') : ''}${m.well ? ' · ' + esc(m.well) : ''}${m.note ? ' · ' + esc(m.note) : ''}</div></div><div class="v" style="color:${m.type === 'in' || (m.type === 'adj' && q >= 0) ? 'var(--ok)' : 'var(--bad)'}">${sign}${fmt(Math.abs(q), 1)} ${esc(it?.unit)}</div></div>`; }).join('') + '</div>' : '<div class="empty">Операций пока нет</div>'}</div><div class="btns"><button class="btn ghost" data-act="movesCSV">Движение CSV</button></div>`;
+  } else {
+    const ds = allDocs().filter(d => d.until || d.src === 'gen').sort((a, b) => (a.until || '9999').localeCompare(b.until || '9999'));
+    const gen = ds.filter(d => d.src === 'gen'), it = ds.filter(d => d.src === 'item');
+    h += `<div class="card"><h2>Поверки, реактивы, сертификаты</h2>${gen.length ? '<div class="list">' + gen.map(d => `<div class="li" data-act="docEdit" data-id="${d.id}"><div class="main"><div class="t">${esc(d.name)}</div><div class="s">${esc(d.type)}${d.note ? ' · ' + esc(d.note) : ''}</div></div><div class="v">${d.until ? expPill(d.until) : ''}</div></div>`).join('') + '</div>' : '<div class="empty small">Добавьте поверки лабораторного оборудования, реактивы и их сроки — приложение предупредит заранее.</div>'}<div class="btns"><button class="btn sec" data-act="docNew">＋ Документ / поверка</button></div></div>
+<div class="card"><h2>Документы на реагенты</h2><div class="list">${it.map(d => `<div class="li" data-act="itemOpen" data-id="${d.item}"><div class="main"><div class="t">${esc(d.name)}</div><div class="s">${esc(d.type)}${d.note ? ' · ' + esc(d.note) : ''}</div></div><div class="v">${expPill(d.until)}</div></div>`).join('')}</div></div>`;
+  }
+  return h;
+}
+function bindStock() {
+  const q = $('#st_q'); if (!q) return;
+  const draw = () => {
+    stockQ = q.value; const s = stockQ.toLowerCase();
+    let items = S.items.filter(it => !s || itemName(it).toLowerCase().includes(s));
+    const rows = items.map(it => ({ it, q: bal(it.id) })).filter(x => !stockOnly || s || x.q > 1e-6);
+    if (!rows.length) { $('#st_list').innerHTML = `<div class="empty small">${stockOnly && !s ? 'Остатков пока нет. Оформите приход — или выключите фильтр «С остатком», чтобы увидеть весь список реагентов.' : 'Ничего не найдено'}</div>`; return; }
+    let h = '', lastC = '';
+    rows.sort((a, b) => Object.keys(CATN).indexOf(a.it.cat) - Object.keys(CATN).indexOf(b.it.cat) || itemName(a.it).localeCompare(itemName(b.it)));
+    for (const { it, q } of rows) { if (it.cat !== lastC) { h += `<div class="tiny muted" style="padding-top:10px;font-weight:700">${esc(CATN[it.cat] || it.cat)}</div>`; lastC = it.cat; }
+      const ne = nearestExp(it.id); const low = has(num(it.min)) && num(it.min) > 0 && q < num(it.min);
+      h += `<div class="li" data-act="itemOpen" data-id="${it.id}"><div class="main"><div class="t">${esc(itemName(it))}</div><div class="s">${ne ? expPill(ne) + ' ' : ''}${low ? '<span class="pill warn">мало</span>' : ''}</div></div><div class="v">${fmt(q, 1)} ${esc(it.unit)}<div class="tiny muted">${packStr(it, q)}</div></div></div>`; }
+    $('#st_list').innerHTML = h;
+  };
+  q.oninput = draw; draw();
+}
+function itemOpen(id) {
+  const it = itemById(id); if (!it) return;
+  const bs = batchesOf(id).sort((a, b) => (a.exp || '9999').localeCompare(b.exp || '9999'));
+  const ms = S.moves.filter(m => m.item === id).sort((a, b) => (b.date + b.ts).localeCompare(a.date + a.ts)).slice(0, 40);
+  const q = bal(id);
+  sheet(itemName(it), `
+<div class="res" style="margin-top:0"><div class="big">${fmt(q, 1)} ${esc(it.unit)}</div><div class="small muted">${packStr(it, q)} · упаковка ${fmt(it.pack)} ${esc(it.unit)} (${esc(it.packName || 'уп.')})</div></div>
+<div class="btns"><button class="btn" data-mv="in">＋ Приход</button><button class="btn sec" data-mv="out">− Расход</button><button class="btn ghost" data-mv="adj">Инвент.</button></div>
+<div class="grp"><div class="gt">Партии</div>${bs.length ? '<div class="list">' + bs.map(b => `<div class="li" data-bt="${b.id}"><div class="main"><div class="t">№ ${esc(b.no || '—')}</div><div class="s">${b.made ? 'изг. ' + ruDate(b.made) + ' · ' : ''}остаток ${fmt(b.bal, 1)} ${esc(it.unit)}</div></div><div class="v">${b.exp ? expPill(b.exp) : '<span class="pill">без срока</span>'}</div></div>`).join('') + '</div>' : '<div class="small muted">Партий нет</div>'}</div>
+<div class="grp"><div class="gt">Документы</div><div class="list">${(it.docs || []).map((d, i) => `<div class="li" data-doc="${i}"><div class="main"><div class="t">${esc(d.type)}</div><div class="s">${esc(d.note || '')}</div></div><div class="v">${d.until ? expPill(d.until) : ''}</div></div>`).join('') || '<div class="small muted">Нет</div>'}</div><button class="btn ghost sm" data-doc="new" style="margin-top:6px">＋ Документ</button></div>
+<div class="grp"><div class="gt">Последние операции</div><div class="list">${ms.map(m => `<div class="li"><div class="main"><div class="s">${ruDate(m.date)} · ${MT[m.type]}${m.note ? ' · ' + esc(m.note) : ''}</div></div><div class="v">${m.type === 'in' ? '+' : m.type === 'adj' ? '' : '−'}${fmt(num(m.qty), 1)}</div></div>`).join('') || '<div class="small muted">Нет</div>'}</div></div>
+<div class="grp"><div class="gt">Карточка</div><div class="grid2">
+<label class="f">Название<input id="i_name" value="${esc(it.name)}"></label><label class="f">Марка / фракция<input id="i_grade" value="${esc(it.grade || '')}"></label>
+${Sel('i_unit', 'Единица учёта', ['кг', 'л', 'т', 'шт'], it.unit)}${F('i_pack', 'Упаковка', it.pack, it.unit)}
+<label class="f">Тип упаковки<input id="i_pn" value="${esc(it.packName || '')}"></label>${F('i_min', 'Минимальный остаток', it.min || '', it.unit)}</div>
+<div class="btns"><button class="btn danger" id="i_del">Удалить реагент</button><button class="btn sec" id="i_save">Сохранить карточку</button></div></div>`, sh => {
+    $$('[data-mv]', sh).forEach(b => b.onclick = () => moveForm(null, { type: b.dataset.mv, item: id }));
+    $$('[data-bt]', sh).forEach(b => b.onclick = () => batchForm(S.batches.find(x => x.id === b.dataset.bt), () => itemOpen(id)));
+    $$('[data-doc]', sh).forEach(b => b.onclick = () => itemDocForm(it, b.dataset.doc === 'new' ? null : +b.dataset.doc));
+    $('#i_save', sh).onclick = () => { it.name = T('i_name', sh) || it.name; it.grade = T('i_grade', sh); it.unit = $('#i_unit', sh).value; it.pack = V('i_pack', sh) || it.pack; it.packName = T('i_pn', sh); it.min = T('i_min', sh); save(); toast('Сохранено'); itemOpen(id); render(); };
+    $('#i_del', sh).onclick = () => { if (S.moves.some(m => m.item === id)) { toast('По реагенту есть операции — сначала удалите их'); return; } confirmBox(`Удалить «${itemName(it)}» из списка?`, () => { S.items = S.items.filter(x => x.id !== id); S.batches = S.batches.filter(b => b.item !== id); save(); render(); }); };
+  });
+}
+function itemDocForm(it, idx) {
+  const d = idx === null ? { type: 'ПБ', until: '', note: '' } : it.docs[idx];
+  sheet('Документ: ' + itemName(it), `${Sel('dd_t', 'Тип', ['ПБ', 'Паспорт качества', 'Сертификат', 'ТУ', 'Другое'], d.type)}<div class="grid2" style="margin-top:8px">${F('dd_u', 'Действует до', d.until, '', 'type="date" inputmode="none"')}<label class="f">Примечание<input id="dd_n" value="${esc(d.note || '')}"></label></div>
+<div class="btns">${idx === null ? '' : '<button class="btn danger" id="dd_del">Удалить</button>'}<button class="btn" id="dd_s">Сохранить</button></div>`, sh => {
+    $('#dd_s', sh).onclick = () => { const x = { type: $('#dd_t', sh).value, until: $('#dd_u', sh).value, note: T('dd_n', sh) }; it.docs = it.docs || []; if (idx === null) it.docs.push(x); else it.docs[idx] = x; save(); itemOpen(it.id); render(); };
+    if (idx !== null) $('#dd_del', sh).onclick = () => { it.docs.splice(idx, 1); save(); itemOpen(it.id); render(); };
+  });
+}
+function batchForm(b, back) {
+  sheet('Партия', `<div class="grid2"><label class="f">Номер партии<input id="bt_no" value="${esc(b.no || '')}"></label>${F('bt_m', 'Дата изготовления', b.made, '', 'type="date" inputmode="none"')}${F('bt_e', 'Годен до', b.exp, '', 'type="date" inputmode="none"')}</div>
+<div class="btns"><button class="btn" id="bt_s">Сохранить</button></div>`, sh => { $('#bt_s', sh).onclick = () => { b.no = T('bt_no', sh); b.made = $('#bt_m', sh).value; b.exp = $('#bt_e', sh).value; save(); render(); back ? back() : closeSheet(); }; });
+}
+function itemOptions(sel) {
+  const by = {}; for (const it of S.items) (by[it.cat] = by[it.cat] || []).push(it);
+  return Object.keys(CATN).filter(c => by[c]).map(c => `<optgroup label="${esc(CATN[c])}">${by[c].sort((a, b) => itemName(a).localeCompare(itemName(b))).map(it => `<option value="${it.id}" ${it.id === sel ? 'selected' : ''}>${esc(itemName(it))}</option>`).join('')}</optgroup>`).join('');
+}
+function moveForm(m, pre) {
+  const isNew = !m; m = m || { id: uid(), ts: Date.now().toString(36), date: today(), type: pre?.type || 'out', item: pre?.item || S.items[0]?.id, batch: '', qty: '', note: '', well: S.settings.well || '' };
+  sheet(isNew ? 'Операция по складу' : 'Операция ' + ruDate(m.date), `
+<div class="seg" id="mv_t">${Object.entries(MT).map(([k, t]) => `<button class="${m.type === k ? 'on' : ''}" data-v="${k}">${t}</button>`).join('')}</div>
+<label class="f">Реагент<select id="mv_i">${itemOptions(m.item)}</select></label>
+<div id="mv_b" style="margin-top:8px"></div>
+<div class="grid2" style="margin-top:8px">${F('mv_d', 'Дата', m.date, '', 'type="date" inputmode="none"')}<label class="f"><span id="mv_ql">Количество</span><div class="row"><input id="mv_q" inputmode="decimal" value="${esc(m.type === 'adj' && !isNew ? String(Math.round((m.batch ? bal(m.item, m.batch) : bal(m.item)) * 1000) / 1000) : m.qty)}"><select id="mv_u" style="flex:0 0 92px"></select></div></label></div>
+<div class="res" id="mv_r"></div>
+<div class="grid2" style="margin-top:8px"><label class="f">Скважина / куст<input id="mv_w" value="${esc(m.well || '')}"></label><label class="f">Комментарий<input id="mv_n" value="${esc(m.note || '')}" placeholder="обработка, поставщик, № накладной…"></label></div>
+<div class="btns">${isNew ? '' : '<button class="btn danger" id="mv_del">Удалить</button>'}<button class="btn" id="mv_s">Сохранить</button></div>`, sh => {
+    let type = m.type;
+    const itm = () => itemById($('#mv_i', sh).value);
+    const drawB = () => {
+      const it = itm(); const bs = batchesOf(it.id);
+      $('#mv_u', sh).innerHTML = `<option value="u">${esc(it.unit)}</option><option value="p">${esc(it.packName || 'уп.')} (${fmt(it.pack)})</option>`;
+      if (type === 'in') {
+        $('#mv_b', sh).innerHTML = `<div class="grid3"><label class="f">№ партии<input id="mv_bn" list="mv_bl" value="${esc(S.batches.find(x => x.id === m.batch)?.no || '')}"><datalist id="mv_bl">${bs.map(b => `<option value="${esc(b.no)}">`).join('')}</datalist></label>${F('mv_bm', 'Изготовлена', S.batches.find(x => x.id === m.batch)?.made || '', '', 'type="date" inputmode="none"')}${F('mv_be', 'Годна до', S.batches.find(x => x.id === m.batch)?.exp || '', '', 'type="date" inputmode="none"')}</div>`;
+        $('#mv_bn', sh).oninput = () => { const b = bs.find(x => x.no === T('mv_bn', sh)); if (b) { $('#mv_bm', sh).value = b.made || ''; $('#mv_be', sh).value = b.exp || ''; } };
+      } else {
+        const avail = bs.filter(b => b.bal > 1e-6 || b.id === m.batch).sort((a, b) => (a.exp || '9999').localeCompare(b.exp || '9999'));
+        const sel = isNew ? (avail[0]?.id || '') : (m.batch || '');
+        $('#mv_b', sh).innerHTML = `<label class="f">Партия${type === 'out' ? ' (по умолчанию — с ближайшим сроком)' : ''}<select id="mv_bs"><option value="">без партии</option>${avail.map(b => `<option value="${b.id}" ${b.id === sel ? 'selected' : ''}>№ ${esc(b.no || '—')} · ${fmt(b.bal, 1)} ${esc(it.unit)}${b.exp ? ' · до ' + ruDate(b.exp) : ''}</option>`).join('')}</select></label>`;
+      }
+      $('#mv_ql', sh).textContent = type === 'adj' ? 'Фактический остаток' : 'Количество';
+      calc();
+    };
+    const qtyU = () => { const it = itm(); let q = V('mv_q', sh); if ($('#mv_u', sh).value === 'p') q *= it.pack; return q; };
+    const calc = () => { const it = itm(); const q = qtyU(); const bsel = type === 'in' ? '' : ($('#mv_bs', sh)?.value ?? '');
+      const cur = balEx(it.id, type === 'out' || type === 'off' ? bsel : (type === 'adj' ? bsel : ''), m.id);
+      if (!has(q)) { $('#mv_r', sh).innerHTML = `Сейчас${bsel && type !== 'in' ? ' по партии' : ''}: ${fmt(cur, 1)} ${esc(it.unit)} ${packStr(it, cur) ? '(' + packStr(it, cur) + ')' : ''}`; return; }
+      const after = type === 'in' ? cur + q : type === 'adj' ? q : cur - q;
+      $('#mv_r', sh).innerHTML = `${type === 'adj' ? `Учётный остаток ${fmt(cur, 1)} → факт ${fmt(q, 1)} (разница ${q - cur >= 0 ? '+' : ''}${fmt(q - cur, 1)})` : `${fmt(q, 1)} ${esc(it.unit)} ${packStr(it, q) ? '= ' + packStr(it, q) : ''}<br>Остаток станет: <b>${fmt(after, 1)} ${esc(it.unit)}</b>`}${after < -1e-6 ? '<div class="small" style="color:var(--bad)">Уходит в минус — проверьте приходы.</div>' : ''}`; };
+    $('#mv_t', sh).onclick = e => { const b = e.target.closest('button'); if (!b) return; type = b.dataset.v; $$('#mv_t button', sh).forEach(x => x.classList.toggle('on', x === b)); drawB(); };
+    $('#mv_i', sh).onchange = drawB; sh.addEventListener('input', calc); sh.addEventListener('change', e => { if (e.target.id !== 'mv_i') calc(); });
+    drawB();
+    $('#mv_s', sh).onclick = () => {
+      const it = itm(); let q = qtyU(); if (!has(q)) { toast('Укажите количество'); return; }
+      let batch = '';
+      if (type === 'in') { const no = T('mv_bn', sh), made = $('#mv_bm', sh).value, exp = $('#mv_be', sh).value;
+        if (no || exp || made) { let b = S.batches.find(x => x.item === it.id && x.no === no && no); if (!b) { b = { id: uid(), item: it.id, no, made, exp }; S.batches.push(b); } else { if (made) b.made = made; if (exp) b.exp = exp; } batch = b.id; } }
+      else batch = $('#mv_bs', sh).value;
+      if (type === 'adj') q = q - balEx(it.id, batch, m.id);
+      Object.assign(m, { type, item: it.id, batch, qty: String(Math.round(q * 1000) / 1000), date: $('#mv_d', sh).value || today(), well: T('mv_w', sh), note: T('mv_n', sh) });
+      if (isNew) S.moves.push(m); save(); closeSheet(); toast('Сохранено: ' + MT[type].toLowerCase()); render();
+    };
+    if (!isNew) $('#mv_del', sh).onclick = () => confirmBox('Удалить операцию?', () => { S.moves = S.moves.filter(x => x.id !== m.id); save(); render(); });
+  });
+}
+function itemNew() {
+  sheet('Новый реагент', `<div class="grid2"><label class="f">Название<input id="n_name"></label><label class="f">Марка / фракция<input id="n_grade"></label>${Sel('n_cat', 'Группа', Object.entries(CATN), 'own')}${Sel('n_unit', 'Единица', ['кг', 'л', 'т', 'шт'], 'кг')}${F('n_pack', 'Упаковка', '25', '')}<label class="f">Тип упаковки<input id="n_pn" value="мешок"></label></div>
+<div class="btns"><button class="btn" id="n_s">Добавить</button></div>`, sh => { $('#n_s', sh).onclick = () => { const name = T('n_name', sh); if (!name) { toast('Введите название'); return; } const it = { id: uid(), name, grade: T('n_grade', sh), cat: $('#n_cat', sh).value, unit: $('#n_unit', sh).value, pack: V('n_pack', sh) || 1, packName: T('n_pn', sh), docs: [], min: '' }; S.items.push(it); save(); itemOpen(it.id); render(); }; });
+}
+function docForm(d) {
+  const isNew = !d; d = d || { id: uid(), type: 'Поверка оборудования', name: '', until: '', note: '' };
+  sheet(isNew ? 'Новый документ' : d.name, `${Sel('g_t', 'Тип', ['Поверка оборудования', 'Реактив лаборатории', 'Сертификат / паспорт качества', 'Другое'], d.type)}
+<label class="f" style="margin-top:8px">Название<input id="g_n" value="${esc(d.name)}" placeholder="Весы рычажные №…, раствор AgNO₃ 0,0282 N…"></label>
+<div class="grid2" style="margin-top:8px">${F('g_u', 'Действует до', d.until, '', 'type="date" inputmode="none"')}<label class="f">Примечание<input id="g_note" value="${esc(d.note || '')}"></label></div>
+<div class="btns">${isNew ? '' : '<button class="btn danger" id="g_del">Удалить</button>'}<button class="btn" id="g_s">Сохранить</button></div>`, sh => {
+    $('#g_s', sh).onclick = () => { d.type = $('#g_t', sh).value; d.name = T('g_n', sh); d.until = $('#g_u', sh).value; d.note = T('g_note', sh); if (!d.name) { toast('Введите название'); return; } if (isNew) S.docs.push(d); save(); closeSheet(); render(); };
+    if (!isNew) $('#g_del', sh).onclick = () => confirmBox('Удалить документ?', () => { S.docs = S.docs.filter(x => x.id !== d.id); save(); render(); });
+  });
+}
+function stockCSV() {
+  const rows = [['Группа', 'Реагент', 'Марка', 'Остаток', 'Ед.', 'Упаковок', 'Ближайший срок', 'ПБ до']];
+  for (const it of S.items) { const q = bal(it.id); if (q <= 1e-6) continue; rows.push([CATN[it.cat] || it.cat, it.name, it.grade, csvNum(q), it.unit, csvNum(it.pack ? q / it.pack : NaN), ruDate(nearestExp(it.id)), ruDate((it.docs || []).find(d => d.type === 'ПБ')?.until)]); }
+  shareOrDownload(`Остатки склада ${today()}.csv`, csv(rows), 'text/csv');
+}
+function movesCSV() {
+  const rows = [['Дата', 'Операция', 'Реагент', 'Партия', 'Годна до', 'Количество', 'Ед.', 'Скважина', 'Комментарий']];
+  for (const m of [...S.moves].sort((a, b) => (a.date + a.ts).localeCompare(b.date + b.ts))) { const it = itemById(m.item); const b = S.batches.find(x => x.id === m.batch); rows.push([ruDate(m.date), MT[m.type], itemName(it), b?.no || '', ruDate(b?.exp), csvNum(num(m.qty)), it?.unit, m.well, m.note]); }
+  shareOrDownload(`Движение склада ${today()}.csv`, csv(rows), 'text/csv');
+}
+
+/* ───────────── сводка, настройки, обмен ───────────── */
+function lastMud() { return [...S.mud].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))[0]; }
+function lastSnaps() { return [...S.snaps].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time)); }
+function renderHome() {
+  let h = '';
+  const al = alerts();
+  const bk = S.settings.lastBackup; const bkDays = bk ? -daysTo(bk) : Infinity;
+  const hasData = S.mud.length || S.moves.length || S.snaps.length;
+  if (hasData && bkDays > 7) al.push({ lvl: 'info', t: 'Сделайте резервную копию', s: bk ? `Последняя — ${ruDate(bk)}` : 'Копий ещё не было. Данные хранятся только в этом телефоне.', act: 'backup' });
+  h += `<div class="card"><h2>Внимание ${al.length ? `<span class="badge-n">${al.length}</span>` : ''}</h2>${al.length ? al.slice(0, 12).map(a => `<div class="alert ${a.lvl}" data-act="${a.act}" data-id="${a.id || ''}"><div><b>${esc(a.t)}</b>${esc(a.s)}</div></div>`).join('') + (al.length > 12 ? `<div class="small muted">и ещё ${al.length - 12}…</div>` : '') : '<div class="small muted">Сроки, документы и остатки в порядке.</div>'}</div>`;
+  const m = lastMud();
+  h += `<div class="card"><div class="row"><h2 style="margin:0">Раствор</h2><button class="btn sm" data-act="mudNew" style="flex:none">＋ Замер</button></div>`;
+  if (m) { const ks0 = ['dens', 'fv', 'pv', 'yp', 'gel', 'fl', 'ph', m.sys === 'РУО' ? 'es' : 'cl', 'ca', 'solids', m.sys === 'РУО' ? 'water' : 'kcl', 'mbt'];
+    const ks = ks0; h += `<div class="small muted" style="margin:6px 0">${ruDate(m.date)} ${esc(m.time)} · ${esc(m.sys)} · ${esc(m.point)}</div><div class="kv">${ks.map(k => { const x = disp(m, k); return `<div><small>${k === 'gel' ? 'СНС' : esc(PK[k].l)}</small><b>${x === '' ? '—' : esc(x)}</b></div>`; }).join('')}</div>`; }
+  else h += `<div class="small muted" style="margin-top:6px">Замеров пока нет.</div>`;
+  h += `</div>`;
+  const sn = lastSnaps();
+  h += `<div class="card"><div class="row"><h2 style="margin:0">Объёмы</h2><button class="btn sm" data-act="${S.tanks.length ? 'snapNew' : 'tankNew'}" style="flex:none">＋ ${S.tanks.length ? 'Замер' : 'Ёмкость'}</button></div>`;
+  if (sn[0]) { const a = snapTotals(sn[0]), b = sn[1] ? snapTotals(sn[1]) : null; h += `<div class="res"><table><tr><td>${shortDate(sn[0].date)} ${esc(sn[0].time)} · активный</td><td>${fmt(a.act, 1)} м³</td></tr><tr><td>Всего в ёмкостях</td><td>${fmt(a.all, 1)} м³</td></tr>${b ? `<tr><td>Δ к ${shortDate(sn[1].date)} ${esc(sn[1].time)}</td><td>${a.all - b.all > 0 ? '+' : ''}${fmt(a.all - b.all, 1)} м³</td></tr>` : ''}</table></div>`; }
+  else h += `<div class="small muted" style="margin-top:6px">${S.tanks.length ? 'Замеров ёмкостей пока нет.' : 'Добавьте ёмкости на вкладке «Ёмкости».'}</div>`;
+  h += `</div>`;
+  h += `<div class="btns"><button class="btn sec" data-act="moveNew">Приход / расход</button><button class="btn sec" data-act="report">Отчёт для Claude</button></div>`;
+  return h;
+}
+
+function report() {
+  const L = [], w = S.settings.warnDays;
+  L.push(`БУРОВОЙ ЖУРНАЛ — отчёт ${ruDate(today())} ${nowTime()}${S.settings.pad ? ', куст ' + S.settings.pad : ''}${S.settings.well ? ', скв. ' + S.settings.well : ''}`);
+  const ms = [...S.mud].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)).slice(-8);
+  if (ms.length) { L.push('', 'РАСТВОР (последние замеры):');
+    for (const r of ms) { const d = derived(r); const parts = P.filter(p => r.v?.[p.k] !== undefined).map(p => `${p.l} ${String(r.v[p.k]).replace('.', ',')}${unitOf(p) ? ' ' + unitOf(p) : ''}`); if (d.owr) parts.push('М/В ' + d.owr); if (has(d.lime)) parts.push('изб.извести ' + fmt(d.lime, 1)); L.push(`- ${ruDate(r.date)} ${r.time} ${r.sys} (${r.point}): ${parts.join('; ')}${r.treat ? ' | обработки: ' + r.treat : ''}${r.note ? ' | ' + r.note : ''}`); } }
+  const sn = lastSnaps().slice(0, 4).reverse();
+  if (sn.length) { L.push('', `ЁМКОСТИ (м³):`); for (const s of sn) { const t = snapTotals(s); L.push(`- ${ruDate(s.date)} ${s.time}: ${S.tanks.map(tk => { const v = tankVol(tk, levelToM(tk, s.l[tk.id])); return has(v) ? `${tk.name} ${fmt(v, 1)}` : null; }).filter(Boolean).join(', ')} | активный ${fmt(t.act, 1)}, всего ${fmt(t.all, 1)}${s.note ? ' | ' + s.note : ''}`); } }
+  const st = S.items.map(it => ({ it, q: bal(it.id) })).filter(x => x.q > 1e-6);
+  if (st.length) { L.push('', 'СКЛАД — остатки:'); for (const { it, q } of st) L.push(`- ${itemName(it)}: ${fmt(q, 1)} ${it.unit}${it.pack ? ` (${fmt(q / it.pack, 1)} ${it.packName || 'уп.'})` : ''}${nearestExp(it.id) ? ', ближайший срок ' + ruDate(nearestExp(it.id)) : ''}`); }
+  const since = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+  const mv = S.moves.filter(m => m.date >= since).sort((a, b) => (a.date + a.ts).localeCompare(b.date + b.ts));
+  if (mv.length) { L.push('', 'СКЛАД — движение за 7 дней:'); for (const m of mv) { const it = itemById(m.item); const b = S.batches.find(x => x.id === m.batch); L.push(`- ${ruDate(m.date)} ${MT[m.type]}: ${itemName(it)} ${m.qty} ${it?.unit}${b ? ', п.' + (b.no || '—') : ''}${m.well ? ', ' + m.well : ''}${m.note ? ' — ' + m.note : ''}`); } }
+  const al = alerts(); if (al.length) { L.push('', `ВНИМАНИЕ (сроки ≤ ${w} дней, минимумы):`); for (const a of al) L.push(`- ${a.t}: ${a.s}`); }
+  return L.join('\n');
+}
+function reportSheet() {
+  const t = report();
+  sheet('Отчёт для Claude', `<p class="small muted">Скопируйте и отправьте в чат, когда будет связь. Для полной передачи данных — «Файл данных» (его можно приложить к сообщению).</p><textarea id="rp" style="min-height:260px;font-size:13px">${esc(t)}</textarea>
+<div class="btns"><button class="btn" id="rpC">Копировать</button><button class="btn sec" id="rpS">Поделиться</button><button class="btn ghost" id="rpJ">Файл данных</button></div>`, sh => {
+    $('#rpC', sh).onclick = () => copyText($('#rp', sh).value);
+    $('#rpS', sh).onclick = async () => { try { if (navigator.share) await navigator.share({ text: $('#rp', sh).value }); else copyText($('#rp', sh).value); } catch (e) { } };
+    $('#rpJ', sh).onclick = exportJSON;
+  });
+}
+function exportJSON() {
+  S.settings.lastBackup = today(); save();
+  shareOrDownload(`burjournal-${today()}.json`, JSON.stringify(S, null, 1), 'application/json'); render();
+}
+function importJSON(file, mode) {
+  const rd = new FileReader();
+  rd.onload = () => {
+    let d; try { d = JSON.parse(rd.result); } catch (e) { toast('Файл не читается'); return; }
+    if (!d || typeof d !== 'object') { toast('Неверный файл'); return; }
+    const lists = ['mud', 'tanks', 'snaps', 'items', 'batches', 'moves', 'docs'];
+    if (mode === 'replace') { if (!lists.some(k => Array.isArray(d[k]))) { toast('В файле нет данных приложения'); return; } S = Object.assign(blank(), d); load2(); }
+    else { let n = 0; for (const k of lists) { if (!Array.isArray(d[k])) continue; for (const x of d[k]) { if (!x || !x.id) continue; const i = S[k].findIndex(y => y.id === x.id); if (i >= 0) S[k][i] = Object.assign(S[k][i], x); else S[k].push(x); n++; } } if (d.settings) S.settings = Object.assign(S.settings, d.settings); toast(`Добавлено/обновлено записей: ${n}`); }
+    save(); closeSheet(); render();
+  };
+  rd.readAsText(file);
+}
+function load2() { const keep = S; try { localStorage.setItem(KEY, JSON.stringify(keep)); } catch (e) { } load(); }
+function settingsSheet() {
+  const st = S.settings;
+  sheet('Настройки и данные', `
+<div class="grp" style="margin-top:0"><div class="gt">Объект</div><div class="grid2"><label class="f">Куст<input id="se_pad" value="${esc(st.pad)}"></label><label class="f">Скважина<input id="se_well" value="${esc(st.well)}"></label></div></div>
+<div class="grp"><div class="gt">Единицы</div><div class="grid2">${Sel('se_yp', 'ДНС и СНС', [['дПа', 'дПа'], ['lb/100ft²', 'lb/100ft²'], ['Па', 'Па']], st.ypUnit)}${Sel('se_lu', 'Уровень в ёмкостях', [['см', 'см'], ['м', 'м']], st.levelUnit)}${F('se_wd', 'Предупреждать о сроках за', st.warnDays, 'дней')}${Sel('se_th', 'Тема', [['auto', 'Как в телефоне'], ['light', 'Светлая'], ['dark', 'Тёмная']], st.theme)}</div></div>
+<div class="grp"><div class="gt">Плотности, г/см³</div><div class="grid3">${F('se_ba', 'Барит', st.rho.barite)}${F('se_ch', 'Мел CaCO₃', st.rho.chalk)}${F('se_oi', 'Нефть / основа', st.rho.oil)}${F('se_wa', 'Вода', st.rho.water)}${F('se_kc', 'KCl (сухой)', st.rho.kcl)}${F('se_cc', 'CaCl₂ (сухой)', st.rho.cacl2)}</div>
+<div class="grid2" style="margin-top:8px">${F('se_pk', 'KCl в товаре', st.purity.kcl, '%')}${F('se_pc', 'CaCl₂ в товаре', st.purity.cacl2, '%')}</div>
+<div class="note">По ПБ: KCl 1,98–1,99 г/см³, KCl ≥ 95 %; CaCl₂ кальцинированный 90–96,5 %, плотность 2,16 (в трёх ПБ указано 2,51 — похоже на ошибку паспорта).</div></div>
+<div class="btns"><button class="btn" id="se_s">Сохранить настройки</button></div>
+<div class="grp"><div class="gt">Резервная копия и обмен</div><p class="small muted">Все данные хранятся только в этом телефоне. Раз в несколько дней сохраняйте файл данных (в «Файлы», Telegram «Избранное» или облако). Этот же файл можно отправить Claude, а от Claude — получить файл для загрузки.</p>
+<div class="btns"><button class="btn sec" data-act2="exp">Сохранить файл данных</button><button class="btn sec" data-act2="rep">Отчёт для Claude</button></div>
+<label class="f" style="margin-top:10px">Загрузить файл данных<input type="file" id="se_imp" accept=".json,application/json"></label>
+<div class="seg" id="se_mode" style="margin-top:8px"><button class="on" data-v="merge">Добавить к текущим</button><button data-v="replace">Заменить всё</button></div>
+<div class="btns"><button class="btn ghost" data-act2="csvm">Журнал CSV</button><button class="btn ghost" data-act2="csvt">Ёмкости CSV</button><button class="btn ghost" data-act2="csvs">Склад CSV</button></div></div>
+<div class="grp"><div class="gt">Справка</div><p class="small">Установка на телефон: откройте ссылку в Safari (iPhone) или Chrome (Android) → «Поделиться» → «На экран Домой» / меню ⋮ → «Установить приложение». После первого открытия работает без интернета.</p>
+<p class="tiny muted">Буровой журнал v${VERSION} · данные: ${S.mud.length} замеров, ${S.snaps.length} замеров ёмкостей, ${S.moves.length} операций склада</p>
+<button class="btn danger sm" id="se_wipe">Стереть все данные</button></div>`, sh => {
+    $('#se_s', sh).onclick = () => { st.pad = T('se_pad', sh); st.well = T('se_well', sh); st.ypUnit = $('#se_yp', sh).value; st.levelUnit = $('#se_lu', sh).value; st.warnDays = V('se_wd', sh) || 90; st.theme = $('#se_th', sh).value;
+      const r = st.rho; r.barite = V('se_ba', sh) || 4.2; r.chalk = V('se_ch', sh) || 2.7; r.oil = V('se_oi', sh) || 0.86; r.water = V('se_wa', sh) || 1; r.kcl = V('se_kc', sh) || 1.98; r.cacl2 = V('se_cc', sh) || 2.16; st.purity.kcl = V('se_pk', sh) || 95; st.purity.cacl2 = V('se_pc', sh) || 94;
+      save(); applyTheme(); closeSheet(); render(); toast('Сохранено'); };
+    sh.addEventListener('click', e => { const a = e.target.closest('[data-act2]')?.dataset.act2; if (!a) return; ({ exp: exportJSON, rep: reportSheet, csvm: mudCSV, csvt: tankCSV, csvs: stockCSV })[a](); });
+    $('#se_mode', sh).onclick = e => { const b = e.target.closest('button'); if (!b) return; $$('#se_mode button', sh).forEach(x => x.classList.toggle('on', x === b)); };
+    $('#se_imp', sh).onchange = e => { const f = e.target.files[0]; if (!f) return; const mode = $('#se_mode .on', sh).dataset.v; if (mode === 'replace') confirmBox('Заменить все данные на данные из файла?', () => importJSON(f, 'replace')); else importJSON(f, 'merge'); };
+    $('#se_wipe', sh).onclick = () => confirmBox('Стереть все данные приложения? Сначала сохраните файл данных.', () => { S = blank(); save(); render(); });
+  });
+}
+
+/* ───────────── каркас ───────────── */
+const ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+  mud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6L5 19a1.5 1.5 0 0 0 1.3 2h11.4A1.5 1.5 0 0 0 19 19l-5-10V3"/><path d="M7.5 14h9"/></svg>',
+  tanks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 13c3 1.5 5-1.5 8 0s5 1.5 8 0"/></svg>',
+  calc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg>',
+  stock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>',
+};
+const TABS = [['home', 'Сводка'], ['mud', 'Раствор'], ['tanks', 'Ёмкости'], ['calc', 'Расчёты'], ['stock', 'Склад']];
+let tab = 'home';
+function render() {
+  const st = S.settings;
+  $('#hdr').innerHTML = `<h1>${esc({ home: 'Буровой журнал', mud: 'Журнал раствора', tanks: 'Ёмкости', calc: 'Расчёты', stock: 'Склад и сроки' }[tab])}<div class="sub">${esc([st.pad && 'куст ' + st.pad, st.well && 'скв. ' + st.well].filter(Boolean).join(' · ') || ruDate(today()))}</div></h1><button data-act="settings" aria-label="Настройки">⚙</button>`;
+  const openCalcs = $$('details.calc[open]').map(d => d.dataset.calc);
+  $('#main').innerHTML = { home: renderHome, mud: renderMud, tanks: renderTanks, calc: renderCalc, stock: renderStock }[tab]();
+  if (tab === 'calc') { openCalcs.forEach(id => { const d = $(`[data-calc="${id}"]`); if (d) d.open = true; }); bindCalc(); }
+  if (tab === 'tanks') bindTankCalc();
+  if (tab === 'stock') bindStock();
+  $('#tabs').innerHTML = TABS.map(([k, t]) => `<button class="${tab === k ? 'on' : ''}" data-tab="${k}">${ICONS[k]}<span>${t}</span></button>`).join('');
+}
+document.addEventListener('click', e => {
+  const tb = e.target.closest('[data-tab]'); if (tb) { tab = tb.dataset.tab; render(); scrollTo(0, 0); return; }
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const a = el.dataset.act, id = el.dataset.id;
+  const acts = {
+    settings: settingsSheet, report: reportSheet, backup: settingsSheet,
+    mudNew: () => mudForm(), mudPaste, mudEdit: () => mudForm(S.mud.find(x => x.id === id)), mudChart: () => { mudChart = el.dataset.k; render(); }, mudCSV, mudBlank,
+    tankNew: () => tankForm(), tankEdit: () => tankForm(S.tanks.find(x => x.id === id)), snapNew: () => snapForm(), snapEdit: () => snapForm(S.snaps.find(x => x.id === id)), tankDay: () => { tankDay = el.dataset.d; render(); }, tankCSV,
+    moveNew: () => moveForm(), moveEdit: () => moveForm(S.moves.find(x => x.id === id)), itemOpen: () => itemOpen(id), itemNew, stockView: () => { stockView = el.dataset.v; render(); }, stockOnly: () => { stockOnly = !stockOnly; render(); }, stockCSV, movesCSV,
+    docNew: () => docForm(), docEdit: () => docForm(S.docs.find(x => x.id === id)),
+  };
+  if (acts[a]) acts[a]();
+});
+load(); applyTheme(); render();
+try { navigator.storage?.persist?.(); } catch (e) { }
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => { });
+</script></body></html>
